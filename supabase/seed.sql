@@ -97,9 +97,6 @@ insert into public.listings (id, seller_id, title, section, subcategory, spec_va
   (15, '00000000-0000-4000-8000-000000000001', 'Cojín de lactancia', 'Dormir', 'Sacos y ropa de cuna', null, array['0-3'], 'Buen estado', 'Usado 4 meses', 15, null, 'sold', 40.4340, -3.7040, 'Plaza de Chamberí')
 on conflict (id) do nothing;
 
--- Los próximos anuncios empiezan después de los de ejemplo.
-select setval(pg_get_serial_sequence('public.listings', 'id'), (select max(id) from public.listings));
-
 -- ------------------------------------------------------------
 -- Fotos (bucket listing-photos, carpeta seed/)
 -- ------------------------------------------------------------
@@ -121,3 +118,6 @@ insert into public.reviews (author_id, target_id, stars, text, created_at) value
 
 -- El trigger recalcula la media con las 2 reseñas; se restaura el historial del prototipo.
 update public.profiles set rating_avg = 5.0, rating_count = 11 where id = '00000000-0000-4000-8000-000000000001';
+
+-- Los próximos anuncios empiezan después de los de ejemplo (debe devolver 15).
+select setval(pg_get_serial_sequence('public.listings', 'id'), (select max(id) from public.listings)) as ultimo_anuncio;
