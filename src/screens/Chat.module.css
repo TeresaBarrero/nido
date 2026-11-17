@@ -1,0 +1,48 @@
+.head {
+  display: flex; align-items: center; gap: 10px; flex: none;
+  padding: calc(14px + var(--top-safe)) 16px 12px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.name { font-family: var(--font-body); font-size: 15px; font-weight: 700; }
+.product {
+  display: flex; align-items: center; gap: 10px; flex: none;
+  background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px 16px;
+}
+.msgs {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  padding: 16px; display: flex; flex-direction: column; gap: 10px;
+}
+.msgs::-webkit-scrollbar { display: none; }
+.sys {
+  align-self: center; text-align: center;
+  font-size: 12.5px; color: #4A5D7A; background: var(--primary-soft);
+  border-radius: 999px; padding: 5px 12px;
+}
+.msg { max-width: 78%; padding: 10px 14px; border-radius: 20px; font-size: 14.5px; overflow-wrap: anywhere; }
+.msg time { display: block; font-size: 11px; opacity: .8; margin-top: 3px; }
+.them { background: var(--surface); box-shadow: 0 0 0 1px var(--line); border-bottom-left-radius: 6px; align-self: flex-start; }
+.me { background: var(--primary); color: #fff; border-bottom-right-radius: 6px; align-self: flex-end; }
+
+.meet {
+  align-self: stretch; display: flex; flex-direction: column; gap: 10px;
+  background: var(--surface); box-shadow: 0 0 0 1px var(--line); border-radius: 22px; padding: 14px;
+}
+.meet h2 { font-size: 15px; font-weight: 800; }
+.r { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+
+.quick {
+  flex: none; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  padding: 8px 12px; background: var(--surface); border-top: 1px solid var(--line);
+}
+.quick::-webkit-scrollbar { display: none; }
+.composer {
+  flex: none; display: flex; gap: 8px; align-items: center;
+  padding: 4px 12px calc(12px + var(--bottom-safe));
+  background: var(--surface);
+}
+.composer input {
+  flex: 1; min-width: 0; height: 46px; border-radius: 23px; border: 0;
+  box-shadow: 0 0 0 1px var(--line); padding: 0 16px; background: var(--ground); outline: 0;
+}
+.composer input:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
+.send { background: var(--primary); color: #fff; box-shadow: none; }

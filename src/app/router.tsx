@@ -5,6 +5,11 @@ import { Notifications } from '../screens/Notifications';
 import { Onboarding } from '../screens/Onboarding';
 import { Placeholder } from '../screens/Placeholder';
 import { NotFound } from '../screens/NotFound';
+import { Search } from '../screens/Search';
+import { Product } from '../screens/Product';
+import { Chat } from '../screens/Chat';
+import { Checkout } from '../screens/Checkout';
+import { Reserved } from '../screens/Reserved';
 
 export const router = createBrowserRouter([
   {
@@ -14,11 +19,11 @@ export const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: 'bienvenida', element: <Onboarding /> },
       { path: 'notificaciones', element: <Notifications /> },
-      { path: 'buscar', element: <Placeholder title="Buscar" /> },
-      { path: 'producto/:id', element: <Placeholder title="Ficha" /> },
-      { path: 'chat/:id', element: <Placeholder title="Chat" /> },
-      { path: 'pagar/:id', element: <Placeholder title="Pagar y reservar" /> },
-      { path: 'reservado/:id', element: <Placeholder title="Reservado" /> },
+      { path: 'buscar', element: <Search /> },
+      { path: 'producto/:id', element: <Product /> },
+      { path: 'chat/:id', element: <Chat /> },
+      { path: 'pagar/:id', element: <Checkout /> },
+      { path: 'reservado/:id', element: <Reserved /> },
       { path: 'vender', element: <Placeholder title="Vender" /> },
       { path: 'mensajes', element: <Placeholder title="Mensajes" /> },
       { path: 'perfil', element: <Placeholder title="Perfil" /> },

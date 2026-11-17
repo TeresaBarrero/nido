@@ -1,0 +1,48 @@
+.hero { position: relative; height: 300px; flex: none; overflow: hidden; background: var(--neutral); }
+.hero > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.grow { animation: grow .38s cubic-bezier(.2, .8, .2, 1); }
+@keyframes grow { from { transform: scale(.6); opacity: .5; border-radius: 24px; } to { transform: none; opacity: 1; } }
+
+.floating {
+  position: absolute; z-index: 3;
+  top: calc(16px + var(--top-safe)); left: 16px; right: 16px;
+  display: flex; justify-content: space-between;
+}
+.fav { background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.dots { position: absolute; z-index: 3; bottom: 34px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; }
+.dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(51, 54, 63, .22); }
+.dots i:first-child { background: var(--ink); width: 18px; border-radius: 4px; }
+
+.sheet {
+  position: relative; flex: 1;
+  background: var(--ground); border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  margin-top: -24px; padding: 24px var(--pad);
+  animation: sheetup .38s .05s ease-out both;
+}
+@keyframes sheetup { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet dl, .sheet dd { margin: 0; }
+.sheet ul { list-style: none; padding: 0; margin-bottom: 0; }
+
+.title { font-size: 23px; font-weight: 800; line-height: 1.15; }
+.price { display: flex; align-items: baseline; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.price b { font-family: var(--font-display); font-size: 30px; font-weight: 900; }
+.price s { color: var(--ink-2); font-size: 14px; }
+.price em { font-style: normal; font-size: 13px; font-weight: 800; color: var(--mint-ink); background: var(--mint); padding: 3px 9px; border-radius: 10px; }
+.desc { font-size: 14.5px; margin-top: 14px; }
+
+.seller {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border-radius: 20px; padding: 12px 14px; margin-top: 16px;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.map { margin-top: 14px; height: 120px; border-radius: 20px; position: relative; overflow: hidden; background: #EAF2EC; }
+.pin {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 70px; height: 70px; border-radius: 50%;
+  background: rgba(78, 110, 158, .14); border: 2px solid var(--primary);
+}
+.mapLabel {
+  position: absolute; left: 10px; bottom: 10px;
+  background: var(--surface); border-radius: 12px; padding: 5px 10px;
+  font-size: 12.5px; font-weight: 700;
+}
