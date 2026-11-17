@@ -1,0 +1,5 @@
+.item { border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item :global(.listrow) { border-top: 0; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--coral); flex: none; }
+.h { font-size: 19px; font-weight: 800; }
