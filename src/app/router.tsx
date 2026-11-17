@@ -12,6 +12,8 @@ import { Reserved } from '../screens/Reserved';
 import { Sell } from '../screens/Sell';
 import { Messages } from '../screens/Messages';
 import { Profile } from '../screens/Profile';
+import { Feedback } from '../screens/Feedback';
+import { Results } from '../screens/Results';
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +31,8 @@ export const router = createBrowserRouter([
       { path: 'vender', element: <Sell /> },
       { path: 'mensajes', element: <Messages /> },
       { path: 'perfil', element: <Profile /> },
+      { path: 'opinion', element: <Feedback /> },
+      { path: 'resultados', element: <Results /> },
       { path: '*', element: <NotFound /> },
     ],
   },

@@ -9,6 +9,7 @@ import { Chip, ChipRow } from '../components/Chip';
 import { Icon } from '../components/Icon';
 import { TabBar } from '../components/TabBar';
 import { publishListing } from '../data/api';
+import { completeTask } from '../app/testMode';
 import { CAR_SEAT_SUBCATEGORY, CONDITIONS, SECTIONS, sectionByName, STAGES, type Condition, type SectionName, type StageKey } from '../data/catalog';
 import { euros } from '../data/format';
 import { useListings } from '../data/listings';
@@ -77,6 +78,19 @@ export function Sell() {
     if (picked.length && step === 'photos') setStep('review');
   };
 
+  // Para testers sin fotos: carga fotos de ejemplo de la bañera.
+  const loadSamplePhotos = async () => {
+    try {
+      const blob = await (await fetch('/img/banera.jpg')).blob();
+      const files = [new File([blob], 'banera.jpg', { type: 'image/jpeg' })];
+      setPhotos(files.map((file) => ({ file, url: URL.createObjectURL(file) })));
+      if (!title) setTitle('Bañera plegable con hamaca');
+      setStep('review');
+    } catch {
+      toast('No se han podido cargar las fotos de ejemplo');
+    }
+  };
+
   const removePhoto = (i: number) => {
     URL.revokeObjectURL(photos[i].url);
     setPhotos((prev) => prev.filter((_, j) => j !== i));
@@ -125,6 +139,7 @@ export function Sell() {
         lng: fuzz(profile?.lng ?? null),
       }, photos.map((p) => p.file));
       setResult({ id: r.id, review: r.status === 'review', photo: r.photo });
+      completeTask(userId, 'publish');
       setStep('published');
     } catch (e) {
       toast(errorMessage(e, 'No se ha podido publicar. Revisa los datos e inténtalo de nuevo.'));
@@ -163,6 +178,7 @@ export function Sell() {
             <span className="cmeta" style={{ justifyContent: 'center' }}>Con luz natural y fondo liso. Después rellenas la ficha en un minuto.</span>
             <span className={styles.fakeBtn}>Añadir fotos</span>
           </button>
+          <button type="button" className={styles.demoLink} onClick={loadSamplePhotos}>¿Sin fotos a mano? Usa las de ejemplo de una bañera</button>
           <section className="section">
             <div className="section-head"><h2 className={styles.h}>Para vender rápido</h2></div>
             <ul className={`panel ${styles.tips}`} style={{ marginTop: 0 }}>

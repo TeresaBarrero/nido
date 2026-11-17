@@ -97,7 +97,7 @@ export function Onboarding() {
           <Button block disabled={busy} onClick={demo}><Icon name="sparkle" size={18} /> {busy ? 'Preparando la demo…' : 'Probar la demo'}</Button>
           <Button block variant="ghost" disabled={busy} onClick={() => setStep('email')}>Entrar con mi correo</Button>
         </div>
-        <p className={styles.note}>La demo usa datos de ejemplo y pagos simulados. No necesitas registrarte.</p>
+        <p className={styles.note}>Demo de portfolio · datos y pagos de prueba. No necesitas registrarte.</p>
       </main>
     );
   }

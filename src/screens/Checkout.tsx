@@ -11,6 +11,7 @@ import { eurosCents, firstName, km, protectionFee } from '../data/format';
 import { useListing } from '../data/listings';
 import { productImage } from '../data/products';
 import { NotFound } from './NotFound';
+import { completeTask } from '../app/testMode';
 import styles from './Checkout.module.css';
 
 export function Checkout() {
@@ -41,6 +42,7 @@ export function Checkout() {
     setPaying(true);
     try {
       await reserveListing(p.id);
+      completeTask(userId, 'reserve');
       navigate(`/reservado/${p.id}`, { replace: true });
     } catch (e) {
       toast(errorMessage(e, 'No se ha podido completar la reserva.'));

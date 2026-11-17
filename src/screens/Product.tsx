@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useParams } from 'react-router';
+import { completeTask } from '../app/testMode';
 import { useApp } from '../app/AppState';
 import { useAuth } from '../app/Auth';
 import { BackButton } from '../components/BackButton';
@@ -23,6 +25,10 @@ export function Product() {
   const { favorites, toast } = useApp();
   const { userId } = useAuth();
   const myRes = useMyReservation(Number(id), userId);
+  // Tarea del modo prueba: algo para un bebé de 6 meses a menos de 5 km.
+  useEffect(() => {
+    if (p && p.stages.includes('6-12') && p.distanceKm <= 5) completeTask(userId, 'find');
+  }, [p, userId]);
   if (loading) return <LoadingScreen />;
   if (!p) return error ? <LoadError withBack /> : <NotFound />;
 

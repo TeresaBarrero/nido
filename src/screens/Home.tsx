@@ -8,6 +8,7 @@ import { Logo } from '../components/Logo';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { SectionTile } from '../components/SectionTile';
 import { TabBar } from '../components/TabBar';
+import { TestCard } from '../components/TestCard';
 import { SECTIONS, stageLabel } from '../data/catalog';
 import { useListings } from '../data/listings';
 import { ageInMonths, nextStage, stageForMonths } from '../data/user';
@@ -63,6 +64,8 @@ export function Home() {
           ))}
         </nav>
 
+        <TestCard />
+
         <BabyStrip baby={baby} onStage={() => { setFilters(freshFilters({ stage })); navigate('/buscar'); }} />
 
         <section className="section" style={{ marginTop: 20 }} aria-labelledby="near">
@@ -92,6 +95,7 @@ export function Home() {
             </div>
           </section>
         )}
+        <p className={styles.demoNote}>Demo de portfolio · datos y pagos de prueba</p>
       </main>
       <TabBar />
     </>
