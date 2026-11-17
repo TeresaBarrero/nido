@@ -7,6 +7,8 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // El registro se hace en main.tsx para recargar la app en cuanto haya versión nueva.
+      injectRegister: false,
       includeAssets: ['favicon.svg', 'apple-touch-icon-180x180.png', 'img/*.jpg'],
       manifest: {
         name: 'Nido',
@@ -29,6 +31,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2}'],
         navigateFallback: '/index.html',
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ],
