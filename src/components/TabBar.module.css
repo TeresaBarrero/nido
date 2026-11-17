@@ -1,5 +1,8 @@
 .bar {
   flex: none;
+  /* Siempre por encima del contenido (el botón + sobresale hacia arriba). Solo los avisos (toast, 50) quedan encima. */
+  position: relative;
+  z-index: 40;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   background: var(--surface);
