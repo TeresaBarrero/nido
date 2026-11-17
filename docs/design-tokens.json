@@ -1,0 +1,11 @@
+{
+  "color": {
+    "ink": "#33363F", "ink-2": "#686C78", "ground": "#FAF7F4", "surface": "#FFFFFF",
+    "neutral": "#F3EEE8", "line": "#EEE8E2", "primary": "#4E6E9E", "primary-soft": "#DCEBF8",
+    "coral": "#F2A69B", "peach": "#FDE4D8", "mint": "#DDF1E8", "mint-ink": "#2F6F57",
+    "lavender": "#ECE7F8", "butter": "#FFF2CB", "pink": "#FBE3EA", "danger": "#A7414F"
+  },
+  "font": { "display": "Nunito 800-900", "body": "Nunito Sans 400-700" },
+  "radius": { "sm": 14, "md": 18, "lg": 24, "xl": 28 },
+  "tap": 44
+}
