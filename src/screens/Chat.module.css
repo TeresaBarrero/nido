@@ -45,4 +45,4 @@
   box-shadow: 0 0 0 1px var(--line); padding: 0 16px; background: var(--ground); outline: 0;
 }
 .composer input:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
-.send { background: var(--primary); color: #fff; box-shadow: none; }
+.composer .send { background: var(--primary); color: #fff; box-shadow: none; }
