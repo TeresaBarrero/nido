@@ -32,3 +32,8 @@
   font-size: 14px; font-weight: 700; color: var(--primary);
   text-decoration: underline; text-underline-offset: 3px;
 }
+.priceInput {
+  width: 76px; height: 36px; border: 0; border-radius: 10px; padding: 0 10px;
+  box-shadow: 0 0 0 1px var(--line); background: var(--ground);
+}
+.priceInput:focus-visible { outline: 0; box-shadow: 0 0 0 2px var(--primary); }

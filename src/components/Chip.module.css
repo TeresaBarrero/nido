@@ -25,3 +25,4 @@
 }
 .row::-webkit-scrollbar { display: none; }
 .wrap { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+.chip:disabled { opacity: .45; cursor: not-allowed; }

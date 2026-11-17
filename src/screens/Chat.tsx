@@ -1,55 +1,88 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
+import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { BackButton } from '../components/BackButton';
 import { Button, ButtonLink } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { Icon } from '../components/Icon';
+import { LoadError, LoadingScreen } from '../components/LoadState';
+import { meetingLabel, useConversation, useMyReservation, type Message } from '../data/api';
 import { TONES } from '../data/catalog';
 import { euros, firstName, initials } from '../data/format';
-import { productImage } from '../data/products';
 import { useListing } from '../data/listings';
-import { LoadError, LoadingScreen } from '../components/LoadState';
-import { ageInMonths, DEMO_USER } from '../data/user';
+import { productImage } from '../data/products';
 import { NotFound } from './NotFound';
 import styles from './Chat.module.css';
 
 const QUICK = ['¿Tiene algún defecto?', '¿Incluye el manual?', '¿Puedes otro día?'];
+const hour = (iso: string) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
 export function Chat() {
   const { id } = useParams();
-  const { data: p, loading, error } = useListing(Number(id));
-  const { chat, sendMessage, toast } = useApp();
+  const [params] = useSearchParams();
+  const listingId = Number(id);
+  const { data: p, loading, error } = useListing(listingId);
+  const { userId } = useAuth();
+  const { toast } = useApp();
+  const { conv, messages, error: convError, send } = useConversation(listingId, params.get('c'));
   const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
   const list = useRef<HTMLDivElement>(null);
-  const state = chat(Number(id));
+  const myRes = useMyReservation(listingId, userId);
 
   // Siempre muestra el último mensaje.
   useEffect(() => {
     const el = list.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [state.sent.length, loading]);
+  }, [messages.length, conv]);
 
   if (loading) return <LoadingScreen />;
   if (!p) return error ? <LoadError withBack /> : <NotFound />;
-  const seller = firstName(p.seller.name);
-  const tone = TONES[p.seller.tone];
-  const months = ageInMonths(DEMO_USER.baby.birthDate);
 
-  const send = (text: string) => {
+  const iAmSeller = conv ? conv.seller.id === userId : p.sellerId === userId;
+  const other = conv ? (iAmSeller ? conv.buyer : conv.seller) : { name: p.seller.name, tone: p.seller.tone, verified: p.seller.verified };
+  const tone = TONES[other.tone];
+  const reservedByMe = Boolean(myRes && myRes.status !== 'cancelled');
+  const available = (p.status === 'live' || !p.status) && !reservedByMe;
+
+  const submit = async (text: string) => {
     const t = text.trim();
-    if (t) sendMessage(p.id, t);
+    if (!t || !userId || sending) return;
+    setSending(true);
+    try { await send(userId, t); setDraft(''); } catch (e) { toast(errorMessage(e, 'No se ha podido enviar el mensaje.')); } finally { setSending(false); }
+  };
+
+  const meeting = (m: Message) => {
+    const mine = m.sender_id === userId;
+    return (
+      <div key={m.id} className={`${styles.meet} fade`}>
+        <h2>{mine ? 'Tu propuesta de entrega' : `Propuesta de entrega de ${firstName(other.name)}`}</h2>
+        <div className={styles.r}><Icon name="pin" size={18} /><span><b>{m.payload?.place}</b> · Punto de encuentro seguro</span></div>
+        {m.payload?.at && <div className={styles.r}><Icon name="clock" size={18} /><span>{meetingLabel(m.payload.at)}</span></div>}
+        <div className={styles.r}><Icon name="lock" size={18} /><span>Pago protegido · {euros(p.price)}</span></div>
+        {!iAmSeller && (available ? (
+          <div className="row">
+            <ButtonLink to={`/pagar/${p.id}`} size="sm" style={{ flex: 1 }}>Aceptar y pagar</ButtonLink>
+            <Button size="sm" variant="ghost" onClick={() => submit('¿Puedes otro día?')}>Otra hora</Button>
+          </div>
+        ) : (
+          <ButtonLink to={`/reservado/${p.id}`} size="sm" variant="ghost"><Icon name="check" size={15} /> Ver mi reserva</ButtonLink>
+        ))}
+      </div>
+    );
   };
 
   return (
     <>
       <header className={styles.head}>
         <BackButton />
-        <div className="avatar" style={{ background: tone.bg, color: tone.ink, width: 40, height: 40, fontSize: 13 }} aria-hidden="true">{initials(p.seller.name)}</div>
+        <div className="avatar" style={{ background: tone.bg, color: tone.ink, width: 40, height: 40, fontSize: 13 }} aria-hidden="true">{initials(other.name)}</div>
         <div style={{ flex: 1 }}>
-          <h1 className={styles.name}>{p.seller.name}</h1>
+          <h1 className={styles.name}>{other.name}</h1>
           <div className="cmeta">
-            {p.seller.verified && <><span className="verified"><Icon name="shield" size={12} /> Verificada</span> · </>}en línea
+            {other.verified && <><span className="verified"><Icon name="shield" size={12} /> Verificada</span> · </>}
+            {iAmSeller ? 'Interesada en tu anuncio' : 'Suele responder en 1 h'}
           </div>
         </div>
       </header>
@@ -60,47 +93,46 @@ export function Chat() {
           <div className="ctitle one">{p.title}</div>
           <b>{euros(p.price)}</b>
         </div>
-        <span className={`pill ${state.accepted ? 'reserved' : 'live'}`}>{state.accepted ? 'Reservado' : 'Disponible'}</span>
+        <span className={`pill ${available ? 'live' : 'reserved'}`}>
+          {available ? 'Disponible' : myRes?.status === 'delivered' || p.status === 'sold' ? 'Vendido' : 'Reservado'}
+        </span>
       </div>
 
-      <div className={styles.msgs} ref={list} role="log" aria-label="Conversación">
+      <div className={styles.msgs} ref={list} role="log" aria-label="Conversación" aria-busy={!conv && !convError}>
         <div className={styles.sys}>Mantén la conversación y el pago en Nido para estar protegida</div>
-        <div className={`${styles.msg} ${styles.me}`}>¡Hola! ¿Sigue disponible? Me vendría genial para mi bebé de {months} meses.<time>10:12</time></div>
-        <div className={`${styles.msg} ${styles.them}`}>¡Hola! Sí, está como nueva. Vivo al lado de {p.meetingPoint}, ¿te viene bien quedar allí?<time>10:15</time></div>
-
-        <div className={styles.meet}>
-          <h2>Propuesta de entrega de {seller}</h2>
-          <div className={styles.r}><Icon name="pin" size={18} /><span><b>{p.meetingPoint}</b> · Punto de encuentro seguro</span></div>
-          <div className={styles.r}><Icon name="clock" size={18} /><span>Sábado 21 nov · 10:30</span></div>
-          <div className={styles.r}><Icon name="lock" size={18} /><span>Pago protegido · {euros(p.price)}</span></div>
-          {state.accepted ? (
-            <div className="tag" style={{ alignSelf: 'flex-start' }}><Icon name="check" size={15} /> Aceptada y pagada</div>
-          ) : (
-            <div className="row">
-              <ButtonLink to={`/pagar/${p.id}`} size="sm" style={{ flex: 1 }}>Aceptar y pagar</ButtonLink>
-              <Button size="sm" variant="ghost" onClick={() => toast('Puedes proponer otro lugar u hora')}>Otra hora</Button>
-            </div>
-          )}
-        </div>
-
-        {state.sent.map((m, i) => (
-          <div key={i} className={`${styles.msg} ${styles.me} fade`}>{m}<time>Ahora</time></div>
+        {convError && <div className={styles.sys} role="alert">{/[áéíóú]/.test(convError) ? convError : 'No se ha podido abrir el chat.'}</div>}
+        {conv && messages.length === 0 && (
+          <p className="muted" style={{ textAlign: 'center', fontSize: 14 }}>Saluda a {firstName(other.name)} y pregunta lo que necesites.</p>
+        )}
+        {messages.map((m) => m.kind === 'meeting_proposal' ? meeting(m) : (
+          <div key={m.id} className={`${styles.msg} ${m.sender_id === userId ? styles.me : styles.them} fade`}>
+            {m.body}<time dateTime={m.created_at}>{hour(m.created_at)}</time>
+          </div>
         ))}
       </div>
 
-      <div className={styles.quick} role="group" aria-label="Preguntas rápidas">
-        {QUICK.map((q) => <Chip key={q} onClick={() => send(q)}>{q}</Chip>)}
-      </div>
-      <form
-        className={styles.composer}
-        onSubmit={(e) => { e.preventDefault(); send(draft); setDraft(''); }}
-      >
-        <label htmlFor="m" className="sr-only">Escribe un mensaje</label>
-        <input id="m" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escribe un mensaje…" autoComplete="off" enterKeyHint="send" />
-        <button type="submit" className={`icon-btn ${styles.send}`} aria-label="Enviar">
-          <Icon name="send" size={19} />
-        </button>
-      </form>
+      {conv && (
+        <>
+          {!iAmSeller && messages.length > 0 && (
+            <div className={styles.quick} role="group" aria-label="Preguntas rápidas">
+              {QUICK.map((q) => <Chip key={q} onClick={() => submit(q)}>{q}</Chip>)}
+            </div>
+          )}
+          <form className={styles.composer} onSubmit={(e) => { e.preventDefault(); submit(draft); }}>
+            <label htmlFor="m" className="sr-only">Escribe un mensaje</label>
+            <input
+              id="m" value={draft} onChange={(e) => setDraft(e.target.value)} autoComplete="off" enterKeyHint="send" maxLength={1000}
+              placeholder={messages.length ? 'Escribe un mensaje…' : '¡Hola! ¿Sigue disponible?'}
+            />
+            <button
+              type="submit" className={`icon-btn ${styles.send}`} aria-label="Enviar" disabled={sending}
+              onClick={(e) => { if (!draft.trim() && !messages.length) { e.preventDefault(); submit('¡Hola! ¿Sigue disponible?'); } }}
+            >
+              <Icon name="send" size={19} />
+            </button>
+          </form>
+        </>
+      )}
     </>
   );
 }

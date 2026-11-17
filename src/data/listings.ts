@@ -1,11 +1,22 @@
-// Lectura de anuncios desde Supabase, convertidos al formato `Product` que usan las pantallas.
+﻿// Lectura de anuncios desde Supabase, convertidos al formato `Product` que usan las pantallas.
 import { useEffect, useState } from 'react';
 import { sectionByName, type Condition, type SectionName, type StageKey, type Tone } from './catalog';
 import type { Product } from './products';
 import { photoUrl, supabase } from './supabase';
 
-/** Punto desde el que se mide la distancia (centro de Chamberí) hasta que haya ubicación real. */
-export const HOME_POINT = { lat: 40.434, lng: -3.704 };
+/** Punto desde el que se mide la distancia: el de tu perfil, o el centro de Chamberí por defecto. */
+let homePoint = { lat: 40.434, lng: -3.704 };
+
+export function setHomePoint(p: { lat: number; lng: number }) {
+  if (p.lat === homePoint.lat && p.lng === homePoint.lng) return;
+  homePoint = p;
+  cache = null; // las distancias cambian
+}
+
+/** Olvida los anuncios guardados (tras publicar, reservar o pausar). */
+export function invalidateListings() {
+  cache = null;
+}
 
 /** Distancia en km entre dos coordenadas (fórmula de Haversine), con un decimal. */
 export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -17,14 +28,17 @@ export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; ln
   return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10;
 }
 
-const SELECT = `
+/** Imagen de reserva cuando un anuncio no tiene fotos. */
+export const NO_PHOTO = '/favicon.svg';
+
+export const LISTING_SELECT = `
   id, title, description, section, subcategory, spec_value, stages, condition, usage, includes,
   is_complete, hygiene, price, new_price, lot_count, meeting_point, lat, lng, status,
   seller:profiles!listings_seller_id_fkey ( id, name, tone, verified, rating_avg, rating_count ),
   listing_photos ( path, position )
 `;
 
-interface Row {
+export interface Row {
   id: number;
   title: string;
   description: string;
@@ -43,16 +57,18 @@ interface Row {
   meeting_point: string | null;
   lat: number | null;
   lng: number | null;
-  status: string;
+  status: Product['status'];
   seller: { id: string; name: string; tone: Tone; verified: boolean; rating_avg: number; rating_count: number } | null;
   listing_photos: { path: string; position: number }[];
 }
 
-function toProduct(r: Row): Product {
+export function toProduct(r: Row): Product {
   const photos = [...r.listing_photos].sort((a, b) => a.position - b.position);
   return {
     id: r.id,
-    photo: photos[0] ? photoUrl(photos[0].path) : '/favicon.svg',
+    sellerId: r.seller?.id,
+    status: r.status,
+    photo: photos[0] ? photoUrl(photos[0].path) : NO_PHOTO,
     title: r.title,
     price: Number(r.price),
     newPrice: r.new_price == null ? null : Number(r.new_price),
@@ -61,7 +77,7 @@ function toProduct(r: Row): Product {
     subcategory: r.subcategory,
     specValue: r.spec_value ?? undefined,
     stages: r.stages,
-    distanceKm: r.lat != null && r.lng != null ? distanceKm(HOME_POINT, { lat: r.lat, lng: r.lng }) : 0,
+    distanceKm: r.lat != null && r.lng != null ? distanceKm(homePoint, { lat: r.lat, lng: r.lng }) : 0,
     condition: r.condition,
     usage: r.usage ?? '',
     includes: r.includes ?? '',
@@ -89,7 +105,7 @@ export function loadListings(force = false): Promise<Product[]> {
   if (cache && !force) return Promise.resolve(cache);
   if (inflight && !force) return inflight;
   inflight = (async () => {
-    const { data, error } = await supabase.from('listings').select(SELECT).eq('status', 'live');
+    const { data, error } = await supabase.from('listings').select(LISTING_SELECT).eq('status', 'live').eq('is_demo_copy', false);
     inflight = null;
     if (error) throw error;
     cache = (data as unknown as Row[]).map(toProduct);
@@ -101,7 +117,7 @@ export function loadListings(force = false): Promise<Product[]> {
 async function loadListing(id: number): Promise<Product | null> {
   const hit = cache?.find((p) => p.id === id);
   if (hit) return hit;
-  const { data, error } = await supabase.from('listings').select(SELECT).eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('listings').select(LISTING_SELECT).eq('id', id).maybeSingle();
   if (error) throw error;
   return data ? toProduct(data as unknown as Row) : null;
 }

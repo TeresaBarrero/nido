@@ -10,8 +10,13 @@ export interface Seller {
   verified: boolean;
 }
 
+export type ListingStatus = 'review' | 'live' | 'paused' | 'reserved' | 'sold';
+
 export interface Product {
   id: number;
+  /** Id del perfil que vende (anuncios de Supabase). */
+  sellerId?: string;
+  status?: ListingStatus;
   /** URL de la foto principal. */
   photo: string;
   title: string;

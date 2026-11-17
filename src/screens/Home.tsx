@@ -1,24 +1,28 @@
 import { Link, useNavigate } from 'react-router';
+import { useAuth } from '../app/Auth';
 import { freshFilters, useApp } from '../app/AppState';
 import { BabyStrip } from '../components/BabyStrip';
 import { Icon } from '../components/Icon';
+import { LoadError } from '../components/LoadState';
 import { Logo } from '../components/Logo';
 import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { SectionTile } from '../components/SectionTile';
 import { TabBar } from '../components/TabBar';
 import { SECTIONS, stageLabel } from '../data/catalog';
 import { useListings } from '../data/listings';
-import { LoadError } from '../components/LoadState';
-import { ageInMonths, DEMO_USER, nextStage, stageForMonths } from '../data/user';
+import { ageInMonths, nextStage, stageForMonths } from '../data/user';
 import styles from './Home.module.css';
 
 export function Home() {
-  const { notificationsRead, setFilters } = useApp();
+  const { profile, baby, userId } = useAuth();
+  const { unreadCount, setFilters } = useApp();
   const navigate = useNavigate();
-  const { data: listings, loading, error, reload } = useListings();
+  const { data: all, loading, error, reload } = useListings();
 
-  const stage = stageForMonths(ageInMonths(DEMO_USER.baby.birthDate));
-  const upcoming = nextStage(stage);
+  // Tus propios anuncios no aparecen como sugerencias.
+  const listings = all.filter((p) => p.sellerId !== userId);
+  const stage = baby ? stageForMonths(ageInMonths(baby.birth_date)) : '0-3';
+  const upcoming = baby ? nextStage(stage) : '0-3';
   const near = [...listings].sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 4);
   const soon = listings.filter((p) => p.stages.includes(upcoming)).slice(0, 5);
 
@@ -29,14 +33,14 @@ export function Home() {
           <div className="row" style={{ gap: 8 }}>
             <Logo size={30} />
             <div>
-              <div className={styles.hello}>Hola, {DEMO_USER.name}</div>
-              <span className={styles.loc}><Icon name="pin" size={15} /> {DEMO_USER.neighborhood} · 5 km</span>
+              <div className={styles.hello}>Hola, {profile?.name ?? 'familia'}</div>
+              <span className={styles.loc}><Icon name="pin" size={15} /> {profile?.neighborhood ?? 'Cerca de ti'} · 5 km</span>
             </div>
           </div>
           <Link
             to="/notificaciones"
-            className={`icon-btn ${notificationsRead ? '' : styles.dot}`}
-            aria-label={notificationsRead ? 'Notificaciones' : 'Notificaciones, 2 sin leer'}
+            className={`icon-btn ${unreadCount ? styles.dot : ''}`}
+            aria-label={unreadCount ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
           >
             <Icon name="bell" size={20} />
           </Link>
@@ -59,7 +63,7 @@ export function Home() {
           ))}
         </nav>
 
-        <BabyStrip onStage={() => { setFilters(freshFilters({ stage })); navigate('/buscar'); }} />
+        <BabyStrip baby={baby} onStage={() => { setFilters(freshFilters({ stage })); navigate('/buscar'); }} />
 
         <section className="section" style={{ marginTop: 20 }} aria-labelledby="near">
           <div className="section-head">
@@ -77,16 +81,14 @@ export function Home() {
           )}
         </section>
 
-        {!error && (
+        {!error && soon.length > 0 && (
           <section className="section" aria-labelledby="soon">
             <div className="section-head">
-              <h2 id="soon" className={styles.h}>Lo que necesitará pronto</h2>
+              <h2 id="soon" className={styles.h}>{baby ? 'Lo que necesitará pronto' : 'Para los primeros meses'}</h2>
               <span className="cmeta">{stageLabel(upcoming).replace(' m', ' meses')}</span>
             </div>
             <div className="hlist" aria-busy={loading}>
-              {loading
-                ? [0, 1, 2].map((i) => <ProductCardSkeleton key={i} />)
-                : soon.map((p) => <ProductCard key={p.id} product={p} />)}
+              {soon.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           </section>
         )}

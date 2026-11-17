@@ -125,7 +125,7 @@ export function Search() {
             type="button"
             className={styles.alert}
             aria-pressed={alertOn}
-            onClick={() => { if (toggleAlert(alertKey)) toast('Te avisaremos cuando alguien publique algo así cerca'); }}
+            onClick={() => { if (toggleAlert(alertKey, f)) toast('Te avisaremos cuando alguien publique algo así cerca'); }}
           >
             <Icon name={alertOn ? 'check' : 'bell'} size={15} /> {alertOn ? 'Alerta creada' : 'Crear alerta'}
           </button>

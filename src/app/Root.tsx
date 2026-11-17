@@ -1,17 +1,31 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
+import { Logo } from '../components/Logo';
 import { Toast } from '../components/Toast';
-import { useApp } from './AppState';
+import { useAuth } from './Auth';
 
-/** Marco de la app: ancho de móvil, avisos y redirección a la bienvenida la primera vez. */
+/** Marco de la app: ancho de móvil, avisos y control de acceso (sesión y bienvenida). */
 export function Root() {
-  const { onboarded } = useApp();
+  const { session, profile, ready } = useAuth();
   const { pathname } = useLocation();
+  const onWelcome = pathname === '/bienvenida';
 
-  if (!onboarded && pathname !== '/bienvenida') return <Navigate to="/bienvenida" replace />;
+  let content = <Outlet />;
+  if (!ready) {
+    content = (
+      <div className="done-screen" style={{ justifyContent: 'center', background: 'var(--primary-soft)' }} aria-busy="true">
+        <Logo size={72} />
+        <span className="sr-only" role="status">Cargando Nido…</span>
+      </div>
+    );
+  } else if ((!session || !profile?.onboarded) && !onWelcome) {
+    content = <Navigate to="/bienvenida" replace />;
+  } else if (session && profile?.onboarded && onWelcome) {
+    content = <Navigate to="/" replace />;
+  }
 
   return (
     <div className="shell">
-      <Outlet />
+      {content}
       <Toast />
     </div>
   );

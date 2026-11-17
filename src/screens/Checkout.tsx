@@ -1,25 +1,52 @@
-import { useNavigate, useParams } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router';
+import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
-import { eurosCents, firstName, km, protectionFee } from '../data/format';
-import { productImage } from '../data/products';
-import { useListing } from '../data/listings';
 import { LoadError, LoadingScreen } from '../components/LoadState';
+import { fetchLatestProposal, meetingLabel, reserveListing, useMyReservation } from '../data/api';
+import { eurosCents, firstName, km, protectionFee } from '../data/format';
+import { useListing } from '../data/listings';
+import { productImage } from '../data/products';
 import { NotFound } from './NotFound';
 import styles from './Checkout.module.css';
 
 export function Checkout() {
   const { id } = useParams();
-  const { data: p, loading, error } = useListing(Number(id));
-  const { acceptMeeting, toast } = useApp();
+  const listingId = Number(id);
+  const { data: p, loading, error } = useListing(listingId);
+  const { userId } = useAuth();
+  const { toast } = useApp();
   const navigate = useNavigate();
+  const [proposal, setProposal] = useState<{ place: string; at: string } | null>(null);
+  const [paying, setPaying] = useState(false);
+  const myRes = useMyReservation(listingId, userId);
+
+  useEffect(() => {
+    if (userId) fetchLatestProposal(listingId, userId).then(setProposal);
+  }, [listingId, userId]);
+
   if (loading) return <LoadingScreen />;
   if (!p) return error ? <LoadError withBack /> : <NotFound />;
+  if ((p.status && p.status !== 'live') || (myRes && myRes.status !== 'cancelled')) {
+    return <Navigate to={`/reservado/${p.id}`} replace />;
+  }
 
   const fee = protectionFee(p.price);
   const total = p.price + fee;
+
+  const pay = async () => {
+    setPaying(true);
+    try {
+      await reserveListing(p.id);
+      navigate(`/reservado/${p.id}`, { replace: true });
+    } catch (e) {
+      toast(errorMessage(e, 'No se ha podido completar la reserva.'));
+      setPaying(false);
+    }
+  };
 
   return (
     <>
@@ -38,7 +65,10 @@ export function Checkout() {
 
         <section className="panel">
           <h2 className={styles.h}>Entrega en mano</h2>
-          <div className={styles.meet}><Icon name="pin" size={16} /> {p.meetingPoint} · sábado 21 nov, 10:30</div>
+          <div className={styles.meet}>
+            <Icon name="pin" size={16} /> {proposal?.place ?? p.meetingPoint}
+            {proposal?.at ? ` · ${meetingLabel(proposal.at)}` : ' · el próximo sábado, 10:30'}
+          </div>
         </section>
 
         <section className="panel" aria-label="Resumen del pago">
@@ -63,8 +93,8 @@ export function Checkout() {
         <p className={styles.demo}>Demo: no se realiza ningún cargo real.</p>
       </main>
       <div className="actionbar">
-        <Button onClick={() => { acceptMeeting(p.id); navigate(`/reservado/${p.id}`, { replace: true }); }}>
-          <Icon name="lock" size={18} /> Pagar {eurosCents(total)}
+        <Button onClick={pay} disabled={paying}>
+          <Icon name="lock" size={18} /> {paying ? 'Procesando el pago…' : `Pagar ${eurosCents(total)}`}
         </Button>
       </div>
     </>

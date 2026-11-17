@@ -19,6 +19,7 @@
 .hero { height: 220px; border-radius: 32px; display: grid; place-items: center; flex: none; }
 .title { font-size: 26px; font-weight: 900; line-height: 1.15; }
 .form { display: flex; flex-direction: column; gap: 16px; }
+.note { font-size: 13px; color: var(--ink-2); text-align: center; }
 
 .dots { display: flex; gap: 6px; justify-content: center; margin-top: auto; padding-top: 8px; }
 .dots i { width: 8px; height: 8px; border-radius: 8px; background: var(--line); transition: width .2s; }

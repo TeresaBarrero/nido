@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router';
+import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { Art } from '../components/Art';
 import { BackButton } from '../components/BackButton';
@@ -6,15 +8,19 @@ import { Button, ButtonLink } from '../components/Button';
 import { Chip, ChipRow } from '../components/Chip';
 import { Icon } from '../components/Icon';
 import { TabBar } from '../components/TabBar';
-import { Link } from 'react-router';
+import { publishListing } from '../data/api';
+import { CAR_SEAT_SUBCATEGORY, CONDITIONS, SECTIONS, sectionByName, STAGES, type Condition, type SectionName, type StageKey } from '../data/catalog';
 import { euros } from '../data/format';
+import { useListings } from '../data/listings';
 import styles from './Sell.module.css';
 
-type Step = 'photos' | 'analyzing' | 'review' | 'published' | 'carseat';
+type Step = 'photos' | 'review' | 'published' | 'carseat' | 'banned';
 
-// Anuncio de ejemplo que "detecta" Nido a partir de las fotos.
-const DETECTED = { title: 'Bañera plegable con hamaca', photo: '/img/banera.jpg', suggested: 25, min: 15, max: 35 };
-const CONDITIONS = ['Nuevo precintado', 'Como nuevo', 'Buen estado', 'Con señales de uso'];
+const MAX_PHOTOS = 10;
+const HYGIENE_SUB = 'Higiene nueva';
+// Regla 2: ni leche de fórmula ni alimentación infantil.
+const BANNED = /leche (de )?f[oó]rmula|leche de continuaci[oó]n|potito|papilla|cereales infantiles|alimentaci[oó]n infantil/i;
+const HYGIENE = ['Lavada y desinfectada', 'Casa sin humo', 'Casa sin mascotas'];
 
 function Progress({ n, label }: { n: 1 | 2 | 3; label: string }) {
   return (
@@ -25,28 +31,121 @@ function Progress({ n, label }: { n: 1 | 2 | 3; label: string }) {
   );
 }
 
-export function Sell() {
-  const [step, setStep] = useState<Step>('photos');
-  const { setMyListing, toast } = useApp();
-  const [title, setTitle] = useState(DETECTED.title);
-  const [condition, setCondition] = useState('Como nuevo');
-  const [complete, setComplete] = useState(true);
-  const [hygiene, setHygiene] = useState({ washed: true, smokeFree: true, petFree: false });
-  const [price, setPrice] = useState(DETECTED.suggested);
-  const [shipping, setShipping] = useState(false);
-  const [analysis, setAnalysis] = useState(0);
+/** Desplaza la ubicación unos cientos de metros para no revelar el domicilio. */
+const fuzz = (v: number | null) => (v == null ? null : Math.round((v + (Math.random() - 0.5) * 0.006) * 10000) / 10000);
 
-  // Simulación del análisis de fotos: dos comprobaciones y paso a la ficha.
-  useEffect(() => {
-    if (step !== 'analyzing') return;
-    setAnalysis(0);
-    const t = [
-      window.setTimeout(() => setAnalysis(1), 900),
-      window.setTimeout(() => setAnalysis(2), 1700),
-      window.setTimeout(() => setStep('review'), 2500),
-    ];
-    return () => t.forEach(window.clearTimeout);
-  }, [step]);
+const median = (xs: number[]) => {
+  const s = [...xs].sort((a, b) => a - b);
+  return s.length ? s[Math.floor((s.length - 1) / 2)] : null;
+};
+
+export function Sell() {
+  const { userId, profile } = useAuth();
+  const { toast } = useApp();
+  const { data: listings } = useListings();
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const [step, setStep] = useState<Step>('photos');
+  const [photos, setPhotos] = useState<{ file: File; url: string }[]>([]);
+  const [title, setTitle] = useState('');
+  const [section, setSection] = useState<SectionName | null>(null);
+  const [sub, setSub] = useState<string | null>(null);
+  const [spec, setSpec] = useState<string | null>(null);
+  const [stages, setStages] = useState<StageKey[]>([]);
+  const [condition, setCondition] = useState<Condition>('Como nuevo');
+  const [complete, setComplete] = useState(true);
+  const [hygiene, setHygiene] = useState<string[]>(['Lavada y desinfectada', 'Casa sin humo']);
+  const [price, setPrice] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [description, setDescription] = useState('');
+  const [meetingPoint, setMeetingPoint] = useState(profile?.neighborhood ?? '');
+  const [shipping, setShipping] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ id: number; review: boolean; photo: string | null } | null>(null);
+
+  // Libera las vistas previas de las fotos al salir.
+  const photosRef = useRef(photos);
+  photosRef.current = photos;
+  useEffect(() => () => photosRef.current.forEach((p) => URL.revokeObjectURL(p.url)), []);
+
+  const addPhotos = (files: FileList | null) => {
+    if (!files) return;
+    const room = MAX_PHOTOS - photos.length;
+    const picked = [...files].filter((f) => f.type.startsWith('image/')).slice(0, room);
+    if (files.length > room) toast(`Máximo ${MAX_PHOTOS} fotos por anuncio`);
+    setPhotos((prev) => [...prev, ...picked.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    if (picked.length && step === 'photos') setStep('review');
+  };
+
+  const removePhoto = (i: number) => {
+    URL.revokeObjectURL(photos[i].url);
+    setPhotos((prev) => prev.filter((_, j) => j !== i));
+  };
+
+  // Precio orientativo a partir de anuncios parecidos.
+  const comps = useMemo(() => {
+    const same = listings.filter((p) => (sub ? p.subcategory === sub : section && p.section === section)).map((p) => p.price);
+    if (same.length < 2) return null;
+    return { min: Math.min(...same), max: Math.max(...same), mid: median(same)! };
+  }, [listings, section, sub]);
+
+  const sec = section ? sectionByName(section) : null;
+  const sealedOnly = sub === CAR_SEAT_SUBCATEGORY || sub === HYGIENE_SUB;
+  const priceNum = Number(price.replace(',', '.'));
+  const newPriceNum = newPrice ? Number(newPrice.replace(',', '.')) : null;
+  const valid = photos.length > 0 && title.trim().length >= 3 && section && sub && priceNum > 0 && meetingPoint.trim();
+
+  const pickSub = (s: string) => {
+    setSub(s);
+    if (s === CAR_SEAT_SUBCATEGORY && condition !== 'Nuevo precintado') setStep('carseat');
+    else if (s === HYGIENE_SUB) setCondition('Nuevo precintado');
+  };
+
+  const publish = async () => {
+    if (!valid || !userId) return;
+    if (BANNED.test(`${title} ${description}`)) { setStep('banned'); return; }
+    if (sub === CAR_SEAT_SUBCATEGORY && condition !== 'Nuevo precintado') { setStep('carseat'); return; }
+    setBusy(true);
+    try {
+      const r = await publishListing(userId, {
+        title: title.trim(),
+        description: description.trim(),
+        section: section!,
+        subcategory: sub!,
+        spec_value: spec,
+        stages,
+        condition,
+        is_complete: complete,
+        hygiene: sub === HYGIENE_SUB ? ['Nuevo precintado'] : hygiene,
+        price: Math.round(priceNum * 100) / 100,
+        new_price: newPriceNum && newPriceNum > 0 ? Math.round(newPriceNum * 100) / 100 : null,
+        delivery: shipping ? 'hand_ship' : 'hand',
+        meeting_point: meetingPoint.trim(),
+        lat: fuzz(profile?.lat ?? null),
+        lng: fuzz(profile?.lng ?? null),
+      }, photos.map((p) => p.file));
+      setResult({ id: r.id, review: r.status === 'review', photo: r.photo });
+      setStep('published');
+    } catch (e) {
+      toast(errorMessage(e, 'No se ha podido publicar. Revisa los datos e inténtalo de nuevo.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const reset = () => {
+    photos.forEach((p) => URL.revokeObjectURL(p.url));
+    setPhotos([]); setTitle(''); setSection(null); setSub(null); setSpec(null); setStages([]);
+    setCondition('Como nuevo'); setPrice(''); setNewPrice(''); setDescription(''); setResult(null);
+    setStep('photos');
+  };
+
+  const picker = (
+    <input
+      ref={fileInput} type="file" accept="image/*" multiple hidden
+      onChange={(e) => { addPhotos(e.target.files); e.target.value = ''; }}
+    />
+  );
 
   if (step === 'photos') {
     return (
@@ -57,13 +156,13 @@ export function Sell() {
         </header>
         <Progress n={1} label="Fotos" />
         <main className="scroll fade" style={{ display: 'flex', flexDirection: 'column' }}>
-          <button type="button" className={styles.drop} onClick={() => setStep('analyzing')}>
+          {picker}
+          <button type="button" className={styles.drop} onClick={() => fileInput.current?.click()}>
             <span className={styles.big}><Icon name="camera" size={34} /></span>
             <b>Haz 3 fotos y listo</b>
-            <span className="cmeta" style={{ justifyContent: 'center' }}>Nido reconoce el producto, rellena la ficha y te sugiere un precio.</span>
+            <span className="cmeta" style={{ justifyContent: 'center' }}>Con luz natural y fondo liso. Después rellenas la ficha en un minuto.</span>
             <span className={styles.fakeBtn}>Añadir fotos</span>
           </button>
-          <button type="button" className={styles.demoLink} onClick={() => setStep('carseat')}>Probar con una foto de silla de coche</button>
           <section className="section">
             <div className="section-head"><h2 className={styles.h}>Para vender rápido</h2></div>
             <ul className={`panel ${styles.tips}`} style={{ marginTop: 0 }}>
@@ -79,72 +178,72 @@ export function Sell() {
     );
   }
 
-  if (step === 'analyzing') {
+  if (step === 'carseat' || step === 'banned') {
+    const carseat = step === 'carseat';
     return (
       <>
-        <header className="bar"><h1 className={styles.barTitle}>Vender</h1></header>
-        <Progress n={1} label="Fotos" />
-        <main className={`${styles.analyzing} fade`}>
-          <div className={styles.photos}>
-            {['50% 50%', '20% 60%', '80% 40%'].map((pos, i) => (
-              <div key={pos} className={styles.ph}>
-                <img src={DETECTED.photo} alt="" style={{ objectPosition: pos }} />
-                <span className={styles.scan} style={{ animationDelay: `${i * 0.2}s` }} />
-              </div>
-            ))}
-          </div>
-          <h2 className={styles.analyzingTitle}>Preparando tu anuncio</h2>
-          <ul className={styles.steps} aria-live="polite">
-            <li className={styles.done}><Icon name="check" size={15} /> 3 fotos recibidas</li>
-            <li className={analysis >= 1 ? styles.done : undefined}>
-              {analysis >= 1 ? <><Icon name="check" size={15} /> Es una bañera plegable con hamaca</> : 'Reconociendo el producto…'}
-            </li>
-            <li className={analysis >= 2 ? styles.done : undefined}>
-              {analysis >= 2 ? <><Icon name="check" size={15} /> 12 ventas similares a menos de 5 km</> : 'Buscando precios cerca de ti…'}
-            </li>
-          </ul>
-        </main>
-      </>
-    );
-  }
-
-  if (step === 'carseat') {
-    return (
-      <>
-        <header className="bar"><BackButton onClick={() => setStep('photos')} /><h1 className={styles.barTitle}>Vender</h1></header>
+        <header className="bar"><BackButton onClick={() => setStep('review')} /><h1 className={styles.barTitle}>Vender</h1></header>
         <main className="done-screen fade" style={{ paddingTop: 20 }}>
-          <div className={styles.carseat}><Art name="carseat" color="#A84866" /></div>
-          <h2 style={{ fontSize: 23, fontWeight: 900 }}>Parece una silla de coche</h2>
-          <p>Por seguridad, en Nido no se pueden vender sillas de coche usadas: un golpe puede dañarlas por dentro sin que se note.</p>
-          <details className="faq">
-            <summary>¿Por qué esta norma?</summary>
-            <p>Las organizaciones de consumidores y de seguridad vial infantil desaconsejan comprarlas usadas: no se puede saber si han sufrido un accidente ni si han caducado.</p>
-          </details>
-          <div className="stack" style={{ marginTop: 6 }}>
-            <Button block onClick={() => setStep('photos')}>Vender otra cosa</Button>
-            <Button block variant="ghost" onClick={() => toast('Si está nueva y precintada, se revisa antes de publicarse')}>Está nueva y precintada</Button>
-          </div>
+          <div className={styles.carseat}>{carseat ? <Art name="carseat" color="#A84866" /> : <Icon name="ban" size={64} style={{ color: '#A84866' }} />}</div>
+          {carseat ? (
+            <>
+              <h2 style={{ fontSize: 23, fontWeight: 900 }}>Las sillas de coche, solo nuevas</h2>
+              <p>Por seguridad, en Nido no se pueden vender sillas de coche usadas: un golpe puede dañarlas por dentro sin que se note.</p>
+              <details className="faq">
+                <summary>¿Por qué esta norma?</summary>
+                <p>Las organizaciones de consumidores y de seguridad vial infantil desaconsejan comprarlas usadas: no se puede saber si han sufrido un accidente ni si han caducado.</p>
+              </details>
+              <div className="stack" style={{ marginTop: 6 }}>
+                <Button block onClick={() => { setSub(null); setStep('review'); }}>Vender otra cosa</Button>
+                <Button block variant="ghost" onClick={() => { setCondition('Nuevo precintado'); setStep('review'); toast('La revisaremos antes de publicarla'); }}>Está nueva y precintada</Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 style={{ fontSize: 23, fontWeight: 900 }}>Esto no se puede vender en Nido</h2>
+              <p>No se permite la leche de fórmula ni la alimentación infantil: no podemos garantizar cómo se ha conservado.</p>
+              <div className="stack" style={{ marginTop: 6 }}>
+                <Button block onClick={() => setStep('review')}>Revisar el anuncio</Button>
+              </div>
+            </>
+          )}
         </main>
       </>
     );
   }
 
-  if (step === 'published') {
+  if (step === 'published' && result) {
     return (
       <>
-        <div style={{ paddingTop: 'calc(16px + var(--top-safe))' }}><Progress n={3} label="Publicado" /></div>
+        <div style={{ paddingTop: 'calc(16px + var(--top-safe))' }}><Progress n={3} label={result.review ? 'En revisión' : 'Publicado'} /></div>
         <main className="done-screen fade" style={{ paddingTop: 30 }}>
           <div className="ok draw"><Icon name="check" size={44} /></div>
-          <h1 className="rise" style={{ fontSize: 27, fontWeight: 900 }}>¡Anuncio publicado!</h1>
-          <p>14 familias a menos de 3 km buscan una bañera. Les hemos avisado.</p>
+          <h1 className="rise" style={{ fontSize: 27, fontWeight: 900 }}>{result.review ? '¡Enviado a revisión!' : '¡Anuncio publicado!'}</h1>
+          <p>{result.review
+            ? 'Las sillas de coche nuevas se revisan antes de publicarse. Te avisaremos cuando esté visible.'
+            : 'Ya lo pueden ver las familias cerca de ti. Te avisaremos cuando alguien te escriba.'}</p>
           <div className={styles.preview} aria-hidden="true">
-            <div className={styles.previewThumb}><img src={DETECTED.photo} alt="" /></div>
-            <span className="price">{euros(price)}</span>
+            <div className={styles.previewThumb}>{result.photo && <img src={result.photo} alt="" />}</div>
+            <span className="price">{euros(priceNum)}</span>
             <span className="ctitle">{title}</span>
           </div>
           <div className="stack" style={{ marginTop: 10 }}>
-            <Button block variant="dark" onClick={() => toast('Enlace listo para pegar en el grupo de WhatsApp')}><Icon name="share" size={18} /> Compartir en WhatsApp</Button>
+            {!result.review && (
+              <Button
+                block variant="dark"
+                onClick={async () => {
+                  const url = `${window.location.origin}/producto/${result.id}`;
+                  try {
+                    if (navigator.share) await navigator.share({ title, url });
+                    else { await navigator.clipboard.writeText(url); toast('Enlace listo para pegar en el grupo de WhatsApp'); }
+                  } catch { /* cancelado */ }
+                }}
+              >
+                <Icon name="share" size={18} /> Compartir en WhatsApp
+              </Button>
+            )}
             <ButtonLink to="/perfil" block variant="ghost">Editar o pausar en Mis anuncios</ButtonLink>
+            <Button block variant="ghost" onClick={reset}>Vender otra cosa</Button>
           </div>
         </main>
       </>
@@ -154,31 +253,64 @@ export function Sell() {
   // step === 'review'
   return (
     <>
-      <header className="bar"><BackButton onClick={() => setStep('photos')} /><h1 className={styles.barTitle}>Revisa tu anuncio</h1></header>
+      <header className="bar"><BackButton onClick={() => setStep('photos')} /><h1 className={styles.barTitle}>Tu anuncio</h1></header>
       <Progress n={2} label="Detalles" />
       <main className="scroll stagger">
+        {picker}
         <div className={styles.photos} style={{ marginTop: 8 }}>
-          <div className={styles.ph}><img src={DETECTED.photo} alt="Foto 1 del producto" /></div>
-          <div className={styles.ph}><img src={DETECTED.photo} alt="Foto 2 del producto" style={{ objectPosition: '20% 60%' }} /></div>
-          <button type="button" className={styles.addph} onClick={() => toast('Hasta 10 fotos por anuncio')}><Icon name="plus" size={20} />Añadir</button>
+          {photos.map((p, i) => (
+            <div key={p.url} className={styles.ph}>
+              <img src={p.url} alt={`Foto ${i + 1} del producto`} />
+              <button type="button" className={styles.rm} aria-label={`Quitar foto ${i + 1}`} onClick={() => removePhoto(i)}><Icon name="close" size={14} /></button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <button type="button" className={styles.addph} onClick={() => fileInput.current?.click()}><Icon name="plus" size={20} />Añadir</button>
+          )}
         </div>
 
         <section className="panel">
-          <div className="row between"><h2 className={styles.h4}>Lo que ha detectado Nido</h2><span className="ai"><Icon name="sparkle" size={13} /> Sugerido</span></div>
-          <div className="field"><label htmlFor="pt">Título</label><input id="pt" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-          <dl className="facts" style={{ marginTop: 12 }}>
-            <div className="fact"><dt><small>Sección</small></dt><dd><b>Baño y cambio · Bañeras</b></dd></div>
-            <div className="fact"><dt><small>Etapa</small></dt><dd><b>0-12 meses</b></dd></div>
-            <div className="fact"><dt><small>Incluye</small></dt><dd><b>Hamaca de baño</b></dd></div>
-            <div className="fact"><dt><small>Precio nuevo</small></dt><dd><b>45 €</b></dd></div>
-          </dl>
+          <div className="field" style={{ marginTop: 0 }}>
+            <label htmlFor="pt">Título</label>
+            <input id="pt" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder="Ej.: Bañera plegable con hamaca" />
+          </div>
+          <h2 className={styles.h4} style={{ marginTop: 14 }}>Sección</h2>
+          <ChipRow wrap label="Sección">
+            {SECTIONS.map((s) => (
+              <Chip key={s.name} small pressed={section === s.name} onClick={() => { setSection(s.name); setSub(null); setSpec(null); }}>{s.name}</Chip>
+            ))}
+          </ChipRow>
+          {sec && (
+            <>
+              <h2 className={styles.h4} style={{ marginTop: 14 }}>Tipo</h2>
+              <ChipRow wrap label="Tipo">
+                {sec.subcategories.map((s) => <Chip key={s} small pressed={sub === s} onClick={() => pickSub(s)}>{s}</Chip>)}
+              </ChipRow>
+              <h2 className={styles.h4} style={{ marginTop: 14 }}>{sec.spec.label} <span className="cmeta" style={{ display: 'inline' }}>(opcional)</span></h2>
+              <ChipRow wrap label={sec.spec.label}>
+                {sec.spec.options.map((o) => <Chip key={o.value} small pressed={spec === o.value} onClick={() => setSpec(spec === o.value ? null : o.value)}>{o.label}</Chip>)}
+              </ChipRow>
+            </>
+          )}
+          <h2 className={styles.h4} style={{ marginTop: 14 }}>Etapa</h2>
+          <ChipRow wrap label="Etapa">
+            {STAGES.map((s) => (
+              <Chip key={s.key} small pressed={stages.includes(s.key)}
+                onClick={() => setStages((prev) => prev.includes(s.key) ? prev.filter((x) => x !== s.key) : [...prev, s.key])}>
+                {s.label}
+              </Chip>
+            ))}
+          </ChipRow>
         </section>
 
         <section className="panel">
           <h2 className={styles.h4}>Estado</h2>
           <ChipRow wrap label="Estado">
-            {CONDITIONS.map((c) => <Chip key={c} pressed={condition === c} onClick={() => setCondition(c)}>{c}</Chip>)}
+            {CONDITIONS.map((c) => (
+              <Chip key={c} pressed={condition === c} disabled={sealedOnly && c !== 'Nuevo precintado'} onClick={() => setCondition(c)}>{c}</Chip>
+            ))}
           </ChipRow>
+          {sealedOnly && <p className="cmeta" style={{ marginTop: 8 }}>En este tipo solo se admiten productos nuevos y precintados.</p>}
         </section>
 
         <section className="panel">
@@ -187,25 +319,40 @@ export function Sell() {
             <button type="button" aria-pressed={complete} onClick={() => setComplete(true)}><b>Todo completo</b>Con piezas y manual</button>
             <button type="button" aria-pressed={!complete} onClick={() => setComplete(false)}><b>Falta algo</b>Indícalo en la descripción</button>
           </div>
+          <div className="field">
+            <label htmlFor="desc">Descripción</label>
+            <textarea id="desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1000} placeholder="Cuánto se ha usado, qué incluye, si falta algo…" />
+          </div>
         </section>
 
-        <fieldset className={`panel ${styles.fieldset}`}>
-          <legend className={styles.h4}>Higiene y casa</legend>
-          <label className={styles.check}><input type="checkbox" checked={hygiene.washed} onChange={(e) => setHygiene({ ...hygiene, washed: e.target.checked })} /> Lavada y desinfectada</label>
-          <label className={styles.check}><input type="checkbox" checked={hygiene.smokeFree} onChange={(e) => setHygiene({ ...hygiene, smokeFree: e.target.checked })} /> Casa sin humo</label>
-          <label className={styles.check}><input type="checkbox" checked={hygiene.petFree} onChange={(e) => setHygiene({ ...hygiene, petFree: e.target.checked })} /> Casa sin mascotas</label>
-        </fieldset>
+        {sub !== HYGIENE_SUB && (
+          <fieldset className={`panel ${styles.fieldset}`}>
+            <legend className={styles.h4}>Higiene y casa</legend>
+            {HYGIENE.map((h) => (
+              <label key={h} className={styles.check}>
+                <input type="checkbox" checked={hygiene.includes(h)}
+                  onChange={(e) => setHygiene((prev) => e.target.checked ? [...prev, h] : prev.filter((x) => x !== h))} /> {h}
+              </label>
+            ))}
+          </fieldset>
+        )}
 
         <section className="panel">
-          <div className="row between"><h2 className={styles.h4}><label htmlFor="price">Precio</label></h2><span className="ai"><Icon name="sparkle" size={13} /> Recomendado</span></div>
-          <div className={styles.priceValue} aria-hidden="true">{euros(price)}</div>
-          <input
-            id="price" type="range" className={styles.range}
-            min={DETECTED.min} max={DETECTED.max} step={1} value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            aria-valuetext={euros(price)}
-          />
-          <div className={styles.ends}><span>{DETECTED.min} €</span><span>Cerca se venden entre 20 y 30 €</span><span>{DETECTED.max} €</span></div>
+          <div className="row between">
+            <h2 className={styles.h4}>Precio</h2>
+            {comps && <span className="ai"><Icon name="sparkle" size={13} /> Recomendado: {euros(comps.mid)}</span>}
+          </div>
+          <div className="row" style={{ gap: 10, marginTop: 8 }}>
+            <div className="field" style={{ marginTop: 0, flex: 1, minWidth: 0 }}>
+              <label htmlFor="price">Tu precio (€)</label>
+              <input id="price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} placeholder={comps ? String(comps.mid) : '25'} />
+            </div>
+            <div className="field" style={{ marginTop: 0, flex: 1, minWidth: 0 }}>
+              <label htmlFor="newprice">Precio nuevo (opcional)</label>
+              <input id="newprice" inputMode="decimal" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
+            </div>
+          </div>
+          {comps && <p className="cmeta" style={{ marginTop: 8 }}>Cerca se venden entre {euros(comps.min)} y {euros(comps.max)}.</p>}
         </section>
 
         <section className="panel">
@@ -214,10 +361,17 @@ export function Sell() {
             <button type="button" aria-pressed={!shipping} onClick={() => setShipping(false)}><b>Solo en mano</b>Gratis · ideal para objetos grandes</button>
             <button type="button" aria-pressed={shipping} onClick={() => setShipping(true)}><b>En mano y envío</b>Desde 3,95 € · lo paga quien compra</button>
           </div>
+          <div className="field">
+            <label htmlFor="meet">Punto de entrega sugerido</label>
+            <input id="meet" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} maxLength={80} placeholder="Ej.: Plaza de Olavide" />
+          </div>
+          <p className="cmeta" style={{ marginTop: 8 }}>Mejor un sitio público. Nunca mostramos tu dirección.</p>
         </section>
       </main>
       <div className="actionbar">
-        <Button disabled={!title.trim()} onClick={() => { setMyListing('live'); setStep('published'); }}>Publicar anuncio</Button>
+        <Button disabled={!valid || busy} onClick={publish}>
+          {busy ? 'Publicando…' : sub === CAR_SEAT_SUBCATEGORY ? 'Enviar a revisión' : 'Publicar anuncio'}
+        </Button>
       </div>
     </>
   );

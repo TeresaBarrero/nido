@@ -1,5 +1,6 @@
 import { useParams } from 'react-router';
 import { useApp } from '../app/AppState';
+import { useAuth } from '../app/Auth';
 import { BackButton } from '../components/BackButton';
 import { ButtonLink } from '../components/Button';
 import { FavButton } from '../components/FavButton';
@@ -8,6 +9,7 @@ import { TONES, stageLabel } from '../data/catalog';
 import { euros, initials, km, rating } from '../data/format';
 import { productImage } from '../data/products';
 import { useListing } from '../data/listings';
+import { useMyReservation } from '../data/api';
 import { LoadError, LoadingScreen } from '../components/LoadState';
 import { NotFound } from './NotFound';
 import styles from './Product.module.css';
@@ -19,6 +21,8 @@ export function Product() {
   const { id } = useParams();
   const { data: p, loading, error } = useListing(Number(id));
   const { favorites, toast } = useApp();
+  const { userId } = useAuth();
+  const myRes = useMyReservation(Number(id), userId);
   if (loading) return <LoadingScreen />;
   if (!p) return error ? <LoadError withBack /> : <NotFound />;
 
@@ -64,7 +68,7 @@ export function Product() {
             <div className="fact"><dt><small>Estado</small></dt><dd><b>{p.condition}</b></dd></div>
             <div className="fact"><dt><small>Uso</small></dt><dd><b>{p.usage}</b></dd></div>
             <div className="fact"><dt><small>Etapa</small></dt><dd><b>{p.stages.map(stageLabel).join(', ')}</b></dd></div>
-            <div className="fact"><dt><small>Distancia</small></dt><dd><b>{km(p.distanceKm)} · a pie</b></dd></div>
+            <div className="fact"><dt><small>Distancia</small></dt><dd><b>{km(p.distanceKm)}{p.distanceKm <= 2 ? ' · a pie' : ''}</b></dd></div>
             <div className="fact wide"><dt><small>Incluye</small></dt><dd><b>{p.includes}</b></dd></div>
           </dl>
 
@@ -102,8 +106,24 @@ export function Product() {
       </main>
 
       <div className="actionbar">
-        <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chatear</ButtonLink>
-        <ButtonLink to={`/chat/${p.id}`}>Reservar · {euros(p.price)}</ButtonLink>
+        {p.sellerId === userId ? (
+          <ButtonLink to="/perfil" variant="ghost">Es tu anuncio · Gestionarlo</ButtonLink>
+        ) : myRes && myRes.status !== 'cancelled' ? (
+          <>
+            <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chat</ButtonLink>
+            <ButtonLink to={`/reservado/${p.id}`} variant="dark"><Icon name="check" size={18} /> {myRes.status === 'delivered' ? 'Comprado' : 'Ver mi reserva'}</ButtonLink>
+          </>
+        ) : p.status && p.status !== 'live' ? (
+          <>
+            <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chat</ButtonLink>
+            <ButtonLink to={`/reservado/${p.id}`} variant="dark">{p.status === 'sold' ? 'Vendido' : 'Reservado'}</ButtonLink>
+          </>
+        ) : (
+          <>
+            <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chatear</ButtonLink>
+            <ButtonLink to={`/chat/${p.id}`}>Reservar · {euros(p.price)}</ButtonLink>
+          </>
+        )}
       </div>
     </>
   );
