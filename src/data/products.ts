@@ -12,8 +12,8 @@ export interface Seller {
 
 export interface Product {
   id: number;
-  /** Nombre de la foto en public/img, sin extensión. */
-  img: string;
+  /** URL de la foto principal. */
+  photo: string;
   title: string;
   price: number;
   /** Precio de compra nuevo, para calcular el ahorro. */
@@ -51,7 +51,8 @@ const sellers = {
   nuria: { name: 'Nuria B.', tone: 'butter', rating: 5.0, sales: 4, verified: false },
 } satisfies Record<string, Seller>;
 
-export const PRODUCTS: Product[] = [
+// Copia local de los anuncios de ejemplo (se usa como respaldo; los reales vienen de Supabase).
+const LOCAL: (Omit<Product, 'photo'> & { img: string })[] = [
   {
     id: 1, img: 'banera', title: 'Bañera plegable con hamaca', price: 25, newPrice: 45, art: 'bath',
     section: 'Baño y cambio', subcategory: 'Bañeras', specValue: 'Plegable', stages: ['0-3', '3-6', '6-12'],
@@ -153,5 +154,7 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
+export const PRODUCTS: Product[] = LOCAL.map(({ img, ...p }) => ({ ...p, photo: `/img/${img}.jpg` }));
+
 export const getProduct = (id: number) => PRODUCTS.find((p) => p.id === id);
-export const productImage = (p: Pick<Product, 'img'>) => `/img/${p.img}.jpg`;
+export const productImage = (p: Pick<Product, 'photo'>) => p.photo;

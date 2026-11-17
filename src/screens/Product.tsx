@@ -6,7 +6,9 @@ import { FavButton } from '../components/FavButton';
 import { Icon } from '../components/Icon';
 import { TONES, stageLabel } from '../data/catalog';
 import { euros, initials, km, rating } from '../data/format';
-import { getProduct, productImage } from '../data/products';
+import { productImage } from '../data/products';
+import { useListing } from '../data/listings';
+import { LoadError, LoadingScreen } from '../components/LoadState';
 import { NotFound } from './NotFound';
 import styles from './Product.module.css';
 
@@ -15,9 +17,10 @@ const hasViewTransitions = typeof document !== 'undefined' && 'startViewTransiti
 
 export function Product() {
   const { id } = useParams();
-  const p = getProduct(Number(id));
+  const { data: p, loading, error } = useListing(Number(id));
   const { favorites, toast } = useApp();
-  if (!p) return <NotFound />;
+  if (loading) return <LoadingScreen />;
+  if (!p) return error ? <LoadError withBack /> : <NotFound />;
 
   const saving = p.newPrice ? Math.round((1 - p.price / p.newPrice) * 100) : null;
   const tone = TONES[p.seller.tone];

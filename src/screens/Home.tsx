@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { freshFilters, useApp } from '../app/AppState';
 import { BabyStrip } from '../components/BabyStrip';
@@ -8,25 +7,20 @@ import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { SectionTile } from '../components/SectionTile';
 import { TabBar } from '../components/TabBar';
 import { SECTIONS, stageLabel } from '../data/catalog';
-import { PRODUCTS } from '../data/products';
+import { useListings } from '../data/listings';
+import { LoadError } from '../components/LoadState';
 import { ageInMonths, DEMO_USER, nextStage, stageForMonths } from '../data/user';
 import styles from './Home.module.css';
 
 export function Home() {
   const { notificationsRead, setFilters } = useApp();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-
-  // Breve esqueleto de carga, como cuando lleguen los datos reales.
-  useEffect(() => {
-    const t = window.setTimeout(() => setLoading(false), 650);
-    return () => window.clearTimeout(t);
-  }, []);
+  const { data: listings, loading, error, reload } = useListings();
 
   const stage = stageForMonths(ageInMonths(DEMO_USER.baby.birthDate));
   const upcoming = nextStage(stage);
-  const near = [...PRODUCTS].sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 4);
-  const soon = PRODUCTS.filter((p) => p.stages.includes(upcoming)).slice(0, 5);
+  const near = [...listings].sort((a, b) => a.distanceKm - b.distanceKm).slice(0, 4);
+  const soon = listings.filter((p) => p.stages.includes(upcoming)).slice(0, 5);
 
   return (
     <>
@@ -72,22 +66,30 @@ export function Home() {
             <h2 id="near" className={styles.h}>Cerca de ti</h2>
             <Link to="/buscar" className="link">Ver todo</Link>
           </div>
-          <div className="grid" aria-busy={loading}>
-            {loading
-              ? near.map((p) => <ProductCardSkeleton key={p.id} />)
-              : near.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
+          {error ? (
+            <LoadError onRetry={reload} />
+          ) : (
+            <div className="grid" aria-busy={loading}>
+              {loading
+                ? [0, 1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)
+                : near.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          )}
         </section>
 
-        <section className="section" aria-labelledby="soon">
-          <div className="section-head">
-            <h2 id="soon" className={styles.h}>Lo que necesitará pronto</h2>
-            <span className="cmeta">{stageLabel(upcoming).replace(' m', ' meses')}</span>
-          </div>
-          <div className="hlist">
-            {soon.map((p) => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </section>
+        {!error && (
+          <section className="section" aria-labelledby="soon">
+            <div className="section-head">
+              <h2 id="soon" className={styles.h}>Lo que necesitará pronto</h2>
+              <span className="cmeta">{stageLabel(upcoming).replace(' m', ' meses')}</span>
+            </div>
+            <div className="hlist" aria-busy={loading}>
+              {loading
+                ? [0, 1, 2].map((i) => <ProductCardSkeleton key={i} />)
+                : soon.map((p) => <ProductCard key={p.id} product={p} />)}
+            </div>
+          </section>
+        )}
       </main>
       <TabBar />
     </>

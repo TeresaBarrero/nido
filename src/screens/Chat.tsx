@@ -7,7 +7,9 @@ import { Chip } from '../components/Chip';
 import { Icon } from '../components/Icon';
 import { TONES } from '../data/catalog';
 import { euros, firstName, initials } from '../data/format';
-import { getProduct, productImage } from '../data/products';
+import { productImage } from '../data/products';
+import { useListing } from '../data/listings';
+import { LoadError, LoadingScreen } from '../components/LoadState';
 import { ageInMonths, DEMO_USER } from '../data/user';
 import { NotFound } from './NotFound';
 import styles from './Chat.module.css';
@@ -16,7 +18,7 @@ const QUICK = ['¿Tiene algún defecto?', '¿Incluye el manual?', '¿Puedes otro
 
 export function Chat() {
   const { id } = useParams();
-  const p = getProduct(Number(id));
+  const { data: p, loading, error } = useListing(Number(id));
   const { chat, sendMessage, toast } = useApp();
   const [draft, setDraft] = useState('');
   const list = useRef<HTMLDivElement>(null);
@@ -26,9 +28,10 @@ export function Chat() {
   useEffect(() => {
     const el = list.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [state.sent.length]);
+  }, [state.sent.length, loading]);
 
-  if (!p) return <NotFound />;
+  if (loading) return <LoadingScreen />;
+  if (!p) return error ? <LoadError withBack /> : <NotFound />;
   const seller = firstName(p.seller.name);
   const tone = TONES[p.seller.tone];
   const months = ageInMonths(DEMO_USER.baby.birthDate);

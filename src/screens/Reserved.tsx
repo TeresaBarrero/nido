@@ -4,20 +4,22 @@ import { useApp } from '../app/AppState';
 import { Button, ButtonLink } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { euros, firstName } from '../data/format';
-import { getProduct } from '../data/products';
+import { useListing } from '../data/listings';
+import { LoadError, LoadingScreen } from '../components/LoadState';
 import { DEMO_USER } from '../data/user';
 import { NotFound } from './NotFound';
 import styles from './Reserved.module.css';
 
 export function Reserved() {
   const { id } = useParams();
-  const p = getProduct(Number(id));
+  const { data: p, loading, error } = useListing(Number(id));
   const { toast } = useApp();
   const [delivered, setDelivered] = useState(false);
   const [stars, setStars] = useState(0);
   // Código de entrega de 4 cifras (en la fase 3 lo generará el servidor).
   const [code] = useState(() => String(1000 + Math.floor(Math.random() * 9000)));
-  if (!p) return <NotFound />;
+  if (loading) return <LoadingScreen />;
+  if (!p) return error ? <LoadError withBack /> : <NotFound />;
   const seller = firstName(p.seller.name);
 
   if (delivered) {

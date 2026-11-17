@@ -4,16 +4,19 @@ import { BackButton } from '../components/BackButton';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { eurosCents, firstName, km, protectionFee } from '../data/format';
-import { getProduct, productImage } from '../data/products';
+import { productImage } from '../data/products';
+import { useListing } from '../data/listings';
+import { LoadError, LoadingScreen } from '../components/LoadState';
 import { NotFound } from './NotFound';
 import styles from './Checkout.module.css';
 
 export function Checkout() {
   const { id } = useParams();
-  const p = getProduct(Number(id));
+  const { data: p, loading, error } = useListing(Number(id));
   const { acceptMeeting, toast } = useApp();
   const navigate = useNavigate();
-  if (!p) return <NotFound />;
+  if (loading) return <LoadingScreen />;
+  if (!p) return error ? <LoadError withBack /> : <NotFound />;
 
   const fee = protectionFee(p.price);
   const total = p.price + fee;

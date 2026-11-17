@@ -7,17 +7,20 @@ import { ProductCard } from '../components/ProductCard';
 import { SectionBadge } from '../components/SectionTile';
 import { TabBar } from '../components/TabBar';
 import { DISTANCES, SECTIONS, sectionByName, STAGES, stageLabel } from '../data/catalog';
-import { PRODUCTS } from '../data/products';
+import { useListings } from '../data/listings';
+import { ProductCardSkeleton } from '../components/ProductCard';
+import { LoadError } from '../components/LoadState';
 import styles from './Search.module.css';
 
 export function Search() {
   const { filters: f, setFilters, alerts, toggleAlert, toast } = useApp();
   const section = f.section ? sectionByName(f.section) : null;
   const set = (patch: Partial<typeof f>) => setFilters((prev) => ({ ...prev, ...patch }));
+  const { data: listings, loading, error, reload } = useListings();
 
   const results = useMemo(() => {
     const q = f.q.trim().toLowerCase();
-    return PRODUCTS.filter((p) =>
+    return listings.filter((p) =>
       p.distanceKm <= f.dist &&
       (!f.stage || p.stages.includes(f.stage)) &&
       (!f.section || p.section === f.section) &&
@@ -28,7 +31,7 @@ export function Search() {
       (!f.verified || p.seller.verified) &&
       (!q || `${p.title} ${p.section} ${p.subcategory}`.toLowerCase().includes(q)),
     ).sort((a, b) => a.distanceKm - b.distanceKm);
-  }, [f]);
+  }, [f, listings]);
 
   const alertKey = JSON.stringify([f.section, f.sub, f.spec, f.stage, f.dist, f.q]);
   const alertOn = alerts.has(alertKey);
@@ -128,7 +131,11 @@ export function Search() {
           </button>
         </div>
 
-        {results.length ? (
+        {error ? (
+          <LoadError onRetry={reload} />
+        ) : loading ? (
+          <div className="grid" aria-busy="true">{[0, 1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}</div>
+        ) : results.length ? (
           <div className="grid">{results.map((p) => <ProductCard key={p.id} product={p} />)}</div>
         ) : (
           <div className={styles.empty}>
