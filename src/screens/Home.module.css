@@ -1,0 +1,22 @@
+.hello { font-size: 13.5px; color: var(--ink-2); }
+.loc { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; font-family: var(--font-display); }
+.dot { position: relative; }
+.dot::after {
+  content: ""; position: absolute; top: 9px; right: 10px;
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--coral); border: 2px solid #fff;
+}
+.search {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border-radius: var(--radius-md);
+  padding: 0 16px; height: 50px; margin-top: 14px;
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--ink);
+}
+.search span { color: #737783; font-size: 15px; }
+.secs {
+  display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+  margin: 14px calc(-1 * var(--pad)) 0; padding: 0 var(--pad) 2px;
+}
+.secs::-webkit-scrollbar { display: none; }
+.h { font-size: 19px; font-weight: 800; }

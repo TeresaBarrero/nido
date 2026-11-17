@@ -1,0 +1,24 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  text-align: center;
+  transition: transform .12s ease-out, filter .12s;
+}
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.primary { background: var(--primary); color: #fff; }
+.primary:hover { filter: brightness(1.06); }
+.dark { background: var(--ink); color: #fff; }
+.ghost { background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+
+.sm { min-height: var(--tap); padding: 0 16px; font-size: 14px; border-radius: var(--radius-sm); }
+.block { width: 100%; }

@@ -1,0 +1,18 @@
+.card { position: relative; }
+.link { display: flex; flex-direction: column; gap: 6px; text-align: left; border-radius: var(--radius-lg); }
+.thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--neutral);
+}
+.thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.badge {
+  position: absolute; z-index: 2; left: 10px; top: 10px;
+  background: rgba(255, 255, 255, .9); border-radius: 10px; padding: 3px 9px;
+  font-size: 11.5px; font-weight: 800; font-family: var(--font-display);
+}
+.new { background: var(--ink); color: #fff; }
+.fav { position: absolute; right: 4px; top: 4px; z-index: 3; }
+.skeleton { display: flex; flex-direction: column; gap: 8px; }

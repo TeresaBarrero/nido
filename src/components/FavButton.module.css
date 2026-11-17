@@ -1,0 +1,9 @@
+/* Zona táctil de 44 px con un círculo visible más pequeño. */
+.fav { width: var(--tap); height: var(--tap); display: grid; place-items: center; border-radius: 50%; }
+.circle {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+  display: grid; place-items: center;
+}
+.fav[aria-pressed='true'] svg { fill: var(--danger); stroke: var(--danger); }
+.pop svg { animation: pop .35s ease-out; }

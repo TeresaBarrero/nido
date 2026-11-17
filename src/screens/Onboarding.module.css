@@ -1,0 +1,35 @@
+.splash {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: var(--primary-soft); text-align: center; padding: 30px;
+}
+.splash p { color: #4A5D7A; font-size: 15px; }
+.wordmark { font-weight: 900; font-size: 46px; color: var(--primary); letter-spacing: -.02em; line-height: 1; }
+.logo { animation: bob 1.6s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.onb {
+  flex: 1; display: flex; flex-direction: column; gap: 16px;
+  padding: calc(24px + var(--top-safe)) 26px calc(28px + var(--bottom-safe));
+  overflow-y: auto;
+}
+.skip {
+  align-self: flex-end; min-height: var(--tap); padding: 0 6px;
+  font-size: 14px; font-weight: 700; color: var(--ink-2);
+}
+.hero { height: 220px; border-radius: 32px; display: grid; place-items: center; flex: none; }
+.title { font-size: 26px; font-weight: 900; line-height: 1.15; }
+.form { display: flex; flex-direction: column; gap: 16px; }
+
+.dots { display: flex; gap: 6px; justify-content: center; margin-top: auto; padding-top: 8px; }
+.dots i { width: 8px; height: 8px; border-radius: 8px; background: var(--line); transition: width .2s; }
+.dots i.on { width: 22px; background: var(--primary); }
+
+.howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.howto li {
+  display: flex; gap: 12px; align-items: center;
+  background: var(--surface); border-radius: 20px; padding: 12px 14px; box-shadow: 0 0 0 1px var(--line);
+}
+.n {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none;
+  font-family: var(--font-display); font-weight: 900;
+}

@@ -1,0 +1,11 @@
+.tile {
+  flex: none; width: 76px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 700; text-align: center; line-height: 1.2;
+  border-radius: var(--radius-md);
+}
+.ic { width: 64px; height: 64px; border-radius: 22px; display: grid; place-items: center; transition: transform .15s ease-out; }
+.tile:active .ic { transform: scale(.95); }
+.ic svg { width: 60%; height: 60%; }
+.badge { border-radius: 16px; display: grid; place-items: center; flex: none; }
+.badge svg { width: 62%; height: 62%; }

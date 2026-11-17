@@ -1,0 +1,9 @@
+.strip { background: var(--lavender); border-radius: 22px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+.top { display: flex; align-items: center; gap: 12px; }
+.av { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; color: #6A55A3; flex: none; }
+.name { font-family: var(--font-display); font-weight: 800; }
+.bar { margin-top: 6px; height: 8px; border-radius: 8px; background: #fff; position: relative; overflow: hidden; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8px; background: var(--coral); animation: fill .9s .25s ease-out both; }
+.nudge { display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, .75); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 13.5px; }
+.nudge span { flex: 1; }
+.sell { padding: 0 12px; }
