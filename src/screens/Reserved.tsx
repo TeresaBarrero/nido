@@ -4,6 +4,7 @@ import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { Button, ButtonLink } from '../components/Button';
 import { Icon } from '../components/Icon';
+import { TabBar } from '../components/TabBar';
 import { LoadError, LoadingScreen } from '../components/LoadState';
 import { confirmDelivery, fetchMyReservation, leaveReview, meetingLabel, type Reservation } from '../data/api';
 import { euros, firstName } from '../data/format';
@@ -11,7 +12,17 @@ import { useListing } from '../data/listings';
 import { NotFound } from './NotFound';
 import styles from './Reserved.module.css';
 
+/** Reserva con la barra inferior visible, para poder salir a Inicio en cualquier momento. */
 export function Reserved() {
+  return (
+    <>
+      <ReservedContent />
+      <TabBar active={null} />
+    </>
+  );
+}
+
+function ReservedContent() {
   const { id } = useParams();
   const listingId = Number(id);
   const { data: p, loading, error } = useListing(listingId);

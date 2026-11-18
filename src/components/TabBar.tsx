@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router';
+import type { MouseEvent } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Icon, type IconName } from './Icon';
 import styles from './TabBar.module.css';
 
@@ -10,14 +11,42 @@ const TABS: { to: string; label: string; icon: IconName; sell?: boolean }[] = [
   { to: '/perfil', label: 'Perfil', icon: 'user' },
 ];
 
-export function TabBar() {
+/**
+ * Barra inferior. `active` fuerza la pestaña marcada en pantallas que no son
+ * la raíz de una pestaña (p. ej. el chat marca Mensajes). Con `null` no se marca ninguna.
+ */
+export function TabBar({ active }: { active?: string | null }) {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const current = active !== undefined ? active : pathname;
+
+  // Inicio vacía el historial de la app: vuelve a la primera entrada y la cambia por Inicio,
+  // así el botón atrás del móvil no regresa al chat ni al pago.
+  const goHome = (e: MouseEvent) => {
+    e.preventDefault();
+    const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (idx <= 0) { navigate('/', { replace: true }); return; }
+    const onPop = () => {
+      window.removeEventListener('popstate', onPop);
+      navigate('/', { replace: true });
+    };
+    window.addEventListener('popstate', onPop);
+    window.history.go(-idx);
+  };
+
   return (
     <nav className={styles.bar} aria-label="Navegación principal">
       {TABS.map((t) => (
-        <NavLink key={t.to} to={t.to} end className={[styles.tab, t.sell && styles.sell].filter(Boolean).join(' ')}>
+        <Link
+          key={t.to}
+          to={t.to}
+          onClick={t.to === '/' ? goHome : undefined}
+          className={[styles.tab, t.sell && styles.sell].filter(Boolean).join(' ')}
+          aria-current={current === t.to ? 'page' : undefined}
+        >
           {t.sell ? <span className={styles.plus}><Icon name={t.icon} size={24} /></span> : <Icon name={t.icon} size={22} />}
           {t.label}
-        </NavLink>
+        </Link>
       ))}
     </nav>
   );

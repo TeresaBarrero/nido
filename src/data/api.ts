@@ -150,6 +150,36 @@ export function useMyReservation(listingId: number, buyerId: string | null) {
   return res;
 }
 
+export interface ActiveReservation {
+  id: string;
+  listing_id: number;
+  meeting_place: string;
+  meeting_at: string;
+  title: string;
+}
+
+/** Tu reserva pendiente de entrega más reciente (para el aviso fijo de Inicio). */
+export function useActiveReservation(buyerId: string | null) {
+  const [res, setRes] = useState<ActiveReservation | null>(null);
+  useEffect(() => {
+    if (!buyerId) { setRes(null); return; }
+    let alive = true;
+    supabase.from('reservations')
+      .select('id, listing_id, meeting_place, meeting_at, listings ( title )')
+      .eq('buyer_id', buyerId).eq('status', 'paid')
+      .order('created_at', { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        if (!data) { setRes(null); return; }
+        const l = data.listings as unknown as { title: string } | { title: string }[] | null;
+        const title = (Array.isArray(l) ? l[0]?.title : l?.title) ?? 'Tu artículo';
+        setRes({ id: data.id, listing_id: data.listing_id, meeting_place: data.meeting_place, meeting_at: data.meeting_at, title });
+      });
+    return () => { alive = false; };
+  }, [buyerId]);
+  return res;
+}
+
 export async function confirmDelivery(reservationId: string) {
   const { error } = await supabase.rpc('confirm_delivery', { p_reservation: reservationId });
   if (error) throw error;

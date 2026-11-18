@@ -6,6 +6,7 @@ import { BackButton } from '../components/BackButton';
 import { Button, ButtonLink } from '../components/Button';
 import { Chip } from '../components/Chip';
 import { Icon } from '../components/Icon';
+import { TabBar } from '../components/TabBar';
 import { LoadError, LoadingScreen } from '../components/LoadState';
 import { meetingLabel, useConversation, useMyReservation, type Message } from '../data/api';
 import { TONES } from '../data/catalog';
@@ -16,6 +17,12 @@ import { NotFound } from './NotFound';
 import styles from './Chat.module.css';
 
 const QUICK = ['¿Tiene algún defecto?', '¿Incluye el manual?', '¿Puedes otro día?'];
+// El borrador del mensaje se guarda en este dispositivo para no perderlo al salir del chat.
+const draftKey = (user: string | null, listing: number) => `nido:draft:${user ?? 'anon'}:${listing}`;
+const readDraft = (key: string) => { try { return localStorage.getItem(key) ?? ''; } catch { return ''; } };
+const writeDraft = (key: string, text: string) => {
+  try { if (text) localStorage.setItem(key, text); else localStorage.removeItem(key); } catch { /* sin almacenamiento */ }
+};
 const hour = (iso: string) => new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 
 export function Chat() {
@@ -26,7 +33,10 @@ export function Chat() {
   const { userId } = useAuth();
   const { toast } = useApp();
   const { conv, messages, error: convError, send } = useConversation(listingId, params.get('c'));
-  const [draft, setDraft] = useState('');
+  const key = draftKey(userId, listingId);
+  const [draft, setDraftState] = useState(() => readDraft(key));
+  const setDraft = (t: string) => { setDraftState(t); writeDraft(key, t); };
+  useEffect(() => { setDraftState(readDraft(key)); }, [key]);
   const [sending, setSending] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   const myRes = useMyReservation(listingId, userId);
@@ -50,7 +60,7 @@ export function Chat() {
     const t = text.trim();
     if (!t || !userId || sending) return;
     setSending(true);
-    try { await send(userId, t); setDraft(''); } catch (e) { toast(errorMessage(e, 'No se ha podido enviar el mensaje.')); } finally { setSending(false); }
+    try { await send(userId, t); if (t === draft.trim()) setDraft(''); } catch (e) { toast(errorMessage(e, 'No se ha podido enviar el mensaje.')); } finally { setSending(false); }
   };
 
   const meeting = (m: Message) => {
@@ -133,6 +143,7 @@ export function Chat() {
           </form>
         </>
       )}
+      <TabBar active="/mensajes" />
     </>
   );
 }

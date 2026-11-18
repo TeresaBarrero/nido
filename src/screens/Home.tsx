@@ -9,6 +9,7 @@ import { ProductCard, ProductCardSkeleton } from '../components/ProductCard';
 import { SectionTile } from '../components/SectionTile';
 import { TabBar } from '../components/TabBar';
 import { TestCard } from '../components/TestCard';
+import { meetingLabel, useActiveReservation } from '../data/api';
 import { SECTIONS, stageLabel } from '../data/catalog';
 import { useListings } from '../data/listings';
 import { ageInMonths, nextStage, stageForMonths } from '../data/user';
@@ -19,6 +20,7 @@ export function Home() {
   const { unreadCount, setFilters } = useApp();
   const navigate = useNavigate();
   const { data: all, loading, error, reload } = useListings();
+  const reservation = useActiveReservation(userId);
 
   // Tus propios anuncios no aparecen como sugerencias.
   const listings = all.filter((p) => p.sellerId !== userId);
@@ -97,6 +99,16 @@ export function Home() {
         )}
         <p className={styles.demoNote}>Demo de portfolio · datos y pagos de prueba</p>
       </main>
+      {reservation && (
+        <Link to={`/reservado/${reservation.listing_id}`} className={`${styles.reserved} rise`}>
+          <span className={styles.reservedIcon} aria-hidden="true"><Icon name="check" size={18} /></span>
+          <span className={styles.reservedText}>
+            <b>Tienes una reserva · {reservation.title}</b>
+            <span>{meetingLabel(reservation.meeting_at)} · {reservation.meeting_place}</span>
+          </span>
+          <span className={styles.reservedCta}>Ver</span>
+        </Link>
+      )}
       <TabBar />
     </>
   );
