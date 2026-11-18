@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { Button } from '../components/Button';
@@ -11,6 +12,7 @@ type Step = 'splash' | 'start' | 'email' | 'sent' | 0 | 1 | 2;
 
 // Centro de Madrid: se usa si la persona no comparte su ubicación.
 const MADRID = { lat: 40.4168, lng: -3.7038 };
+const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 export function Onboarding() {
   const { session, userId, profile, refresh, startDemo, sendMagicLink } = useAuth();
@@ -55,7 +57,8 @@ export function Onboarding() {
     if (!navigator.geolocation) { setAskHood(true); return; }
     setBusy(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setBusy(false); saveLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }, null); },
+      // Solo guardamos una ubicación aproximada (unos 100 m), nunca la posición exacta.
+      (pos) => { setBusy(false); saveLocation({ lat: round3(pos.coords.latitude), lng: round3(pos.coords.longitude) }, null); },
       () => { setBusy(false); setAskHood(true); toast('No hemos podido obtener tu ubicación. Escribe tu barrio.'); },
       { timeout: 10000, maximumAge: 600000 },
     );
@@ -97,7 +100,7 @@ export function Onboarding() {
           <Button block disabled={busy} onClick={demo}><Icon name="sparkle" size={18} /> {busy ? 'Preparando la demo…' : 'Probar la demo'}</Button>
           <Button block variant="ghost" disabled={busy} onClick={() => setStep('email')}>Entrar con mi correo</Button>
         </div>
-        <p className={styles.note}>Demo de portfolio · datos y pagos de prueba. No necesitas registrarte.</p>
+        <p className={styles.note}>Demo de portfolio · datos y pagos de prueba. No necesitas registrarte. <Link to="/privacidad">Privacidad</Link></p>
       </main>
     );
   }
@@ -115,6 +118,7 @@ export function Onboarding() {
           </div>
           <Button type="submit" block disabled={busy || !email.includes('@')}>{busy ? 'Enviando…' : 'Enviarme el enlace'}</Button>
         </form>
+        <p className={styles.note}>Usamos tu correo solo para enviarte el enlace. <Link to="/privacidad">Privacidad</Link></p>
       </main>
     );
   }

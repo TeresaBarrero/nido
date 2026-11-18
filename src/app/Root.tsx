@@ -8,6 +8,8 @@ export function Root() {
   const { session, profile, ready } = useAuth();
   const { pathname } = useLocation();
   const onWelcome = pathname === '/bienvenida';
+  // La privacidad se puede leer sin entrar en la app.
+  const isPublic = pathname === '/privacidad';
 
   let content = <Outlet />;
   if (!ready) {
@@ -17,6 +19,8 @@ export function Root() {
         <span className="sr-only" role="status">Cargando Nido…</span>
       </div>
     );
+  } else if (isPublic) {
+    content = <Outlet />;
   } else if ((!session || !profile?.onboarded) && !onWelcome) {
     content = <Navigate to="/bienvenida" replace />;
   } else if (session && profile?.onboarded && onWelcome) {

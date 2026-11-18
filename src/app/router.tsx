@@ -14,6 +14,7 @@ import { Messages } from '../screens/Messages';
 import { Profile } from '../screens/Profile';
 import { Feedback } from '../screens/Feedback';
 import { Results } from '../screens/Results';
+import { Privacy } from '../screens/Privacy';
 
 export const router = createBrowserRouter([
   {
@@ -33,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'perfil', element: <Profile /> },
       { path: 'opinion', element: <Feedback /> },
       { path: 'resultados', element: <Results /> },
+      { path: 'privacidad', element: <Privacy /> },
       { path: '*', element: <NotFound /> },
     ],
   },

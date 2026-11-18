@@ -34,3 +34,4 @@
   width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none;
   font-family: var(--font-display); font-weight: 900;
 }
+.note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

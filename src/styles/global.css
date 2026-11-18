@@ -236,3 +236,10 @@ details.faq p { margin: 0 0 13px; font-size: 14px; color: var(--ink-2); }
   .draw svg path { stroke-dashoffset: 0; }
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
 }
+
+/* Textos legales (Privacidad) */
+.legal { padding: 8px 22px calc(40px + var(--bottom-safe)); overflow-y: auto; flex: 1; min-height: 0; line-height: 1.55; }
+.legal h2 { font-size: 18px; font-weight: 800; margin: 22px 0 6px; }
+.legal p, .legal li { color: var(--ink-2); }
+.legal ul { padding-left: 1.1em; display: grid; gap: 6px; }
+.legal a { color: var(--primary); font-weight: 700; }

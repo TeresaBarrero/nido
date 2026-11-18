@@ -213,6 +213,7 @@ export function Profile() {
         <button type="button" className={styles.reset} onClick={leave}>
           {isDemo ? 'Salir de la demo' : 'Cerrar sesión'}
         </button>
+        <p className="muted" style={{ textAlign: 'center', fontSize: 13 }}><Link to="/privacidad">Privacidad</Link></p>
       </main>
       <TabBar />
     </>
