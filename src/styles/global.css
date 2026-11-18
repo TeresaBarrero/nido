@@ -185,7 +185,8 @@ details.faq p { margin: 0 0 13px; font-size: 14px; color: var(--ink-2); }
 .done-screen {
   display: flex; flex-direction: column; align-items: center; text-align: center;
   gap: 14px; padding: calc(56px + var(--top-safe)) 26px calc(30px + var(--bottom-safe));
-  flex: 1; overflow-y: auto;
+  /* min-height: 0 deja que haga scroll dentro y no empuje la barra inferior fuera de la pantalla */
+  flex: 1; min-height: 0; overflow-y: auto;
 }
 .done-screen h2 { font-size: 27px; font-weight: 900; }
 .done-screen > p { color: var(--ink-2); max-width: 30ch; }

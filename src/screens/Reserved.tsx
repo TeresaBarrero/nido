@@ -4,7 +4,7 @@ import { errorMessage, useAuth } from '../app/Auth';
 import { useApp } from '../app/AppState';
 import { Button, ButtonLink } from '../components/Button';
 import { Icon } from '../components/Icon';
-import { TabBar } from '../components/TabBar';
+import { TabBar, useGoHome } from '../components/TabBar';
 import { LoadError, LoadingScreen } from '../components/LoadState';
 import { confirmDelivery, fetchMyReservation, leaveReview, meetingLabel, type Reservation } from '../data/api';
 import { euros, firstName } from '../data/format';
@@ -31,6 +31,7 @@ function ReservedContent() {
   const [res, setRes] = useState<Reservation | null | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [stars, setStars] = useState(0);
+  const goHome = useGoHome();
 
   useEffect(() => {
     if (!userId) return;
@@ -118,6 +119,7 @@ function ReservedContent() {
       <div className="stack" style={{ marginTop: 6 }}>
         <Button block onClick={deliver} disabled={busy}>{busy ? 'Confirmando…' : 'Simular la entrega'}</Button>
         <ButtonLink to={`/chat/${p.id}`} variant="ghost" block>Abrir el chat</ButtonLink>
+        <Button variant="ghost" block onClick={() => goHome()}>Volver al inicio</Button>
       </div>
     </main>
   );

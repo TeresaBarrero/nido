@@ -12,18 +12,13 @@ const TABS: { to: string; label: string; icon: IconName; sell?: boolean }[] = [
 ];
 
 /**
- * Barra inferior. `active` fuerza la pestaña marcada en pantallas que no son
- * la raíz de una pestaña (p. ej. el chat marca Mensajes). Con `null` no se marca ninguna.
+ * Ir a Inicio vaciando el historial de la app: vuelve a la primera entrada y la cambia por Inicio,
+ * así el botón atrás del móvil no regresa al chat ni al pago.
  */
-export function TabBar({ active }: { active?: string | null }) {
+export function useGoHome() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const current = active !== undefined ? active : pathname;
-
-  // Inicio vacía el historial de la app: vuelve a la primera entrada y la cambia por Inicio,
-  // así el botón atrás del móvil no regresa al chat ni al pago.
-  const goHome = (e: MouseEvent) => {
-    e.preventDefault();
+  return (e?: MouseEvent) => {
+    e?.preventDefault();
     const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
     if (idx <= 0) { navigate('/', { replace: true }); return; }
     const onPop = () => {
@@ -33,6 +28,16 @@ export function TabBar({ active }: { active?: string | null }) {
     window.addEventListener('popstate', onPop);
     window.history.go(-idx);
   };
+}
+
+/**
+ * Barra inferior. `active` fuerza la pestaña marcada en pantallas que no son
+ * la raíz de una pestaña (p. ej. el chat marca Mensajes). Con `null` no se marca ninguna.
+ */
+export function TabBar({ active }: { active?: string | null }) {
+  const { pathname } = useLocation();
+  const current = active !== undefined ? active : pathname;
+  const goHome = useGoHome();
 
   return (
     <nav className={styles.bar} aria-label="Navegación principal">
