@@ -56,11 +56,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const load = useCallback(async (id: string) => {
-    const [p, b] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', id).maybeSingle(),
+    const [p, b, loc] = await Promise.all([
+      // La ubicación no se lee de la tabla (es privada): llega aparte con my_location().
+      supabase.from('profiles').select('id, name, neighborhood, verified, rating_avg, rating_count, tone, onboarded').eq('id', id).maybeSingle(),
       supabase.from('babies').select('id,name,birth_date').eq('profile_id', id).order('birth_date', { ascending: false }).limit(1).maybeSingle(),
+      supabase.rpc('my_location').maybeSingle(),
     ]);
-    const prof = (p.data as Profile | null) ?? null;
+    const point = (loc.data as { lat: number | null; lng: number | null } | null) ?? { lat: null, lng: null };
+    const prof = p.data ? ({ ...(p.data as Omit<Profile, 'lat' | 'lng'>), lat: point.lat, lng: point.lng }) : null;
     setProfile(prof);
     setBaby((b.data as Baby | null) ?? null);
     if (prof?.lat != null && prof.lng != null) setHomePoint({ lat: prof.lat, lng: prof.lng });
