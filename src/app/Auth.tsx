@@ -120,6 +120,8 @@ export function useAuth() {
 /** Mensaje de error comprensible a partir de un error de Supabase. */
 export function errorMessage(e: unknown, fallback = 'Algo no ha ido bien. Inténtalo de nuevo.') {
   const msg = (e as { message?: string } | null)?.message ?? '';
+  // P0001: aviso lanzado a propósito por una función de Nido en la base de datos (siempre en español).
+  if ((e as { code?: string } | null)?.code === 'P0001' && msg) return msg;
   if (/rate limit|too many/i.test(msg)) return 'Has pedido demasiados enlaces seguidos. Espera unos minutos.';
   if (/network|fetch/i.test(msg)) return 'Sin conexión. Revisa internet y vuelve a intentarlo.';
   if (/[áéíóúñ¿]/i.test(msg)) return msg; // mensajes propios de Nido, ya en español
