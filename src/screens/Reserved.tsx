@@ -107,7 +107,7 @@ function ReservedContent() {
   return (
     <main className="done-screen fade">
       <div className="ok draw"><Icon name="check" size={44} /></div>
-      <h1 className={`${styles.h} rise`}>¡Reservado!</h1>
+      <h1 className={`${styles.h} rise`}>¡Pagado!</h1>
       <p className="rise d1">
         Quedas con {seller} el {meetingLabel(res.meeting_at).replace(' · ', ' a las ').toLowerCase()} en {res.meeting_place}. Enséñale este código al recogerlo:
       </p>

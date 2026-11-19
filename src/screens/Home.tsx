@@ -103,7 +103,7 @@ export function Home() {
         <Link to={`/reservado/${reservation.listing_id}`} className={`${styles.reserved} rise`}>
           <span className={styles.reservedIcon} aria-hidden="true"><Icon name="check" size={18} /></span>
           <span className={styles.reservedText}>
-            <b>Tienes una reserva · {reservation.title}</b>
+            <b>Pagado · {reservation.title}</b>
             <span>{meetingLabel(reservation.meeting_at)} · {reservation.meeting_place}</span>
           </span>
           <span className={styles.reservedCta}>Ver</span>

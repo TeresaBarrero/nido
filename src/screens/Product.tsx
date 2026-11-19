@@ -117,7 +117,7 @@ export function Product() {
         ) : myRes && myRes.status !== 'cancelled' ? (
           <>
             <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chat</ButtonLink>
-            <ButtonLink to={`/reservado/${p.id}`} variant="dark"><Icon name="check" size={18} /> {myRes.status === 'delivered' ? 'Comprado' : 'Ver mi reserva'}</ButtonLink>
+            <ButtonLink to={`/reservado/${p.id}`} variant="dark"><Icon name="check" size={18} /> {myRes.status === 'delivered' ? 'Comprado' : 'Pagado'}</ButtonLink>
           </>
         ) : p.status && p.status !== 'live' ? (
           <>

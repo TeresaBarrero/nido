@@ -77,7 +77,7 @@ export function Chat() {
             <Button size="sm" variant="ghost" onClick={() => submit('¿Puedes otro día?')}>Otra hora</Button>
           </div>
         ) : (
-          <ButtonLink to={`/reservado/${p.id}`} size="sm" variant="ghost"><Icon name="check" size={15} /> Ver mi reserva</ButtonLink>
+          <ButtonLink to={`/reservado/${p.id}`} size="sm" variant="ghost"><Icon name="check" size={15} /> Ver mi compra</ButtonLink>
         ))}
       </div>
     );
@@ -104,7 +104,7 @@ export function Chat() {
           <b>{euros(p.price)}</b>
         </div>
         <span className={`pill ${available ? 'live' : 'reserved'}`}>
-          {available ? 'Disponible' : myRes?.status === 'delivered' || p.status === 'sold' ? 'Vendido' : 'Reservado'}
+          {available ? 'Disponible' : reservedByMe ? (myRes?.status === 'delivered' ? 'Comprado' : 'Pagado') : p.status === 'sold' ? 'Vendido' : 'Reservado'}
         </span>
       </div>
 
