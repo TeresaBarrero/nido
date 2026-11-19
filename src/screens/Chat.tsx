@@ -145,9 +145,16 @@ export function Chat() {
           <div className="ctitle one">{p.title}</div>
           <b>{euros(p.price)}</b>
         </div>
-        <span className={`pill ${available ? 'live' : 'reserved'}`}>
-          {available ? 'Disponible' : reservedByMe ? (myRes?.status === 'delivered' ? 'Comprado' : 'Pagado') : p.status === 'sold' ? 'Vendido' : 'Reservado'}
-        </span>
+        {available && !iAmSeller ? (
+          // Se puede comprar en cualquier momento, sin buscar la propuesta de entrega en el chat.
+          <ButtonLink to={`/pagar/${p.id}`} size="sm" aria-label={`Pagar ${euros(p.price)} por ${p.title}`}>
+            <Icon name="lock" size={15} /> Pagar
+          </ButtonLink>
+        ) : (
+          <span className={`pill ${available ? 'live' : 'reserved'}`}>
+            {available ? 'Disponible' : reservedByMe ? (myRes?.status === 'delivered' ? 'Comprado' : 'Pagado') : p.status === 'sold' ? 'Vendido' : 'Reservado'}
+          </span>
+        )}
       </div>
 
       <div className={styles.msgs} ref={list} role="log" aria-label="Conversación" aria-busy={!conv && !convError}>
