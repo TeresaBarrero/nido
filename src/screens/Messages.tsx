@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { useAuth } from '../app/Auth';
-import { ButtonLink } from '../components/Button';
+import { errorMessage, useAuth } from '../app/Auth';
+import { useApp } from '../app/AppState';
+import { Button, ButtonLink } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { LoadError } from '../components/LoadState';
 import { TabBar } from '../components/TabBar';
-import { fetchConversations, type ConversationSummary } from '../data/api';
+import { clearConversation, fetchConversations, type ConversationSummary } from '../data/api';
 import { TONES } from '../data/catalog';
-import { initials } from '../data/format';
+import { firstName, initials } from '../data/format';
 import styles from './Messages.module.css';
 
 const when = (iso: string) => {
@@ -25,16 +26,44 @@ export function Messages() {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
+  const { toast } = useApp();
+  const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
     let alive = true;
     setError(false);
-    fetchConversations().then((c) => alive && setList(c)).catch(() => alive && setError(true));
+    fetchConversations(userId).then((c) => alive && setList(c)).catch(() => alive && setError(true));
     return () => { alive = false; };
-  }, [attempt]);
+  }, [attempt, userId]);
+
+  const hasChats = Boolean(list && list.length);
+  useEffect(() => { if (!hasChats) { setEditing(false); setConfirming(null); } }, [hasChats]);
+
+  const clear = async (id: string) => {
+    setBusy(true);
+    try {
+      await clearConversation(id);
+      setList((prev) => prev?.filter((c) => c.id !== id) ?? null);
+      setConfirming(null);
+      toast('Conversación eliminada');
+    } catch (e) {
+      toast(errorMessage(e, 'No se ha podido eliminar la conversación.'));
+    } finally { setBusy(false); }
+  };
 
   return (
     <>
-      <header className="app-top"><h1 className="page-title">Mensajes</h1></header>
+      <header className="app-top row between">
+        <h1 className="page-title">Mensajes</h1>
+        {hasChats && (
+          <button type="button" className={`link ${styles.edit}`} aria-pressed={editing}
+            onClick={() => { setEditing((v) => !v); setConfirming(null); }}>
+            {editing ? 'Listo' : 'Editar'}
+          </button>
+        )}
+      </header>
       <main className="scroll fade">
         {error ? (
           <LoadError onRetry={() => setAttempt((n) => n + 1)} />
@@ -56,8 +85,22 @@ export function Messages() {
               const last = c.last
                 ? (c.last.kind === 'meeting_proposal' ? 'Propuesta de entrega' : c.last.deleted_at ? 'Mensaje eliminado' : c.last.body)
                 : 'Conversación nueva';
+              if (confirming === c.id) {
+                return (
+                  <li key={c.id} className={`${styles.item} ${styles.confirm} fade`} role="group" aria-label={`Eliminar la conversación con ${other.name}`}>
+                    <b>¿Eliminar la conversación con {firstName(other.name)}?</b>
+                    <p className="muted">Solo desaparece para ti. Si vuelve a escribirte, verás solo los mensajes nuevos.</p>
+                    <div className="row">
+                      <Button size="sm" variant="ghost" onClick={() => setConfirming(null)}>Cancelar</Button>
+                      <Button size="sm" variant="ghost" className={styles.del} disabled={busy} onClick={() => clear(c.id)}>
+                        {busy ? 'Eliminando…' : 'Eliminar'}
+                      </Button>
+                    </div>
+                  </li>
+                );
+              }
               return (
-                <li key={c.id} className={styles.item}>
+                <li key={c.id} className={`${styles.item} ${editing ? styles.editingRow : ''}`}>
                   <Link to={iAmSeller ? `/chat/${c.listing_id}?c=${c.id}` : `/chat/${c.listing_id}`} className="listrow">
                     <div className="mini" style={{ width: 52, height: 52 }}>
                       {c.photo
@@ -70,6 +113,12 @@ export function Messages() {
                       <div className="ctitle one muted">{c.last?.sender_id === userId ? 'Tú: ' : ''}{last}</div>
                     </div>
                   </Link>
+                  {editing && (
+                    <Button size="sm" variant="ghost" className={styles.del} aria-label={`Eliminar la conversación con ${other.name}`}
+                      onClick={() => setConfirming(c.id)}>
+                      Eliminar
+                    </Button>
+                  )}
                 </li>
               );
             })}

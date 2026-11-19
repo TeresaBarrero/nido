@@ -27,9 +27,27 @@ export interface Conversation {
   listing_id: number;
   buyer: PersonLite;
   seller: PersonLite;
+  /** Hasta cuándo ha vaciado cada persona la conversación («eliminar solo para mí»). */
+  buyer_cleared_at?: string | null;
+  seller_cleared_at?: string | null;
 }
 
-const CONV_SELECT = `id, listing_id,
+/** Fecha en la que esta persona eliminó la conversación para sí, si lo hizo. */
+export const clearedAt = (c: Conversation, userId: string | null) =>
+  (c.buyer.id === userId ? c.buyer_cleared_at : c.seller.id === userId ? c.seller_cleared_at : null) ?? null;
+
+/** Mensajes que esta persona sigue viendo (los posteriores a eliminar la conversación). */
+export const visibleMessages = (c: Conversation, userId: string | null, msgs: Message[]) => {
+  const since = clearedAt(c, userId);
+  return since ? msgs.filter((m) => m.created_at > since) : msgs;
+};
+
+export async function clearConversation(conversationId: string) {
+  const { error } = await supabase.rpc('clear_conversation', { p_conversation: conversationId });
+  if (error) throw error;
+}
+
+const CONV_SELECT = `id, listing_id, buyer_cleared_at, seller_cleared_at,
   buyer:profiles!conversations_buyer_id_fkey ( id, name, tone, verified ),
   seller:profiles!conversations_seller_id_fkey ( id, name, tone, verified )`;
 
@@ -97,20 +115,24 @@ export interface ConversationSummary extends Conversation {
   last: Message | null;
 }
 
-export async function fetchConversations(): Promise<ConversationSummary[]> {
+export async function fetchConversations(userId: string | null): Promise<ConversationSummary[]> {
   const { data, error } = await supabase.from('conversations').select(`${CONV_SELECT},
     listing:listings ( title, listing_photos ( path, position ) ),
     messages ( id, conversation_id, sender_id, body, kind, payload, created_at, deleted_at )`);
   if (error) throw error;
   type R = Conversation & { listing: { title: string; listing_photos: { path: string; position: number }[] } | null; messages: Message[] };
   return (data as unknown as R[]).map((r) => {
-    const msgs = [...r.messages].sort((a, b) => a.created_at.localeCompare(b.created_at));
+    const msgs = visibleMessages(r, userId, [...r.messages].sort((a, b) => a.created_at.localeCompare(b.created_at)));
     const ph = [...(r.listing?.listing_photos ?? [])].sort((a, b) => a.position - b.position)[0];
     return {
       id: r.id, listing_id: r.listing_id, buyer: r.buyer, seller: r.seller,
+      buyer_cleared_at: r.buyer_cleared_at, seller_cleared_at: r.seller_cleared_at,
       title: r.listing?.title ?? 'Anuncio', photo: ph ? photoUrl(ph.path) : null, last: msgs[msgs.length - 1] ?? null,
     };
-  }).sort((a, b) => (b.last?.created_at ?? '').localeCompare(a.last?.created_at ?? ''));
+  })
+    // Las que has eliminado no aparecen hasta que llegue un mensaje nuevo.
+    .filter((c) => !clearedAt(c, userId) || c.last)
+    .sort((a, b) => (b.last?.created_at ?? '').localeCompare(a.last?.created_at ?? ''));
 }
 
 // ------------------------------------------------------------

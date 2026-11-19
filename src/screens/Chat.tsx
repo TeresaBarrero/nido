@@ -8,7 +8,7 @@ import { Chip } from '../components/Chip';
 import { Icon } from '../components/Icon';
 import { TabBar } from '../components/TabBar';
 import { LoadError, LoadingScreen } from '../components/LoadState';
-import { meetingLabel, useConversation, useMyReservation, type Message } from '../data/api';
+import { meetingLabel, useConversation, useMyReservation, visibleMessages, type Message } from '../data/api';
 import { TONES } from '../data/catalog';
 import { euros, firstName, initials } from '../data/format';
 import { useListing } from '../data/listings';
@@ -32,7 +32,8 @@ export function Chat() {
   const { data: p, loading, error } = useListing(listingId);
   const { userId } = useAuth();
   const { toast } = useApp();
-  const { conv, messages, error: convError, send, remove } = useConversation(listingId, params.get('c'));
+  const { conv, messages: allMessages, error: convError, send, remove } = useConversation(listingId, params.get('c'));
+  const messages = conv ? visibleMessages(conv, userId, allMessages) : allMessages;
   const [picked, setPicked] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const key = draftKey(userId, listingId);
