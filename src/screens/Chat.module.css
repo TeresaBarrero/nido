@@ -23,6 +23,19 @@
 .them { background: var(--surface); box-shadow: 0 0 0 1px var(--line); border-bottom-left-radius: 6px; align-self: flex-start; }
 .me { background: var(--primary); color: #fff; border-bottom-right-radius: 6px; align-self: flex-end; }
 
+/* Mensaje propio: se toca para ver «Eliminar para todos». */
+.mine { align-self: flex-end; max-width: 78%; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.mine .msg { max-width: 100%; }
+button.msg { border: 0; font: inherit; text-align: left; cursor: pointer; }
+.picked { box-shadow: 0 0 0 3px var(--primary-soft); }
+.msgMenu { display: flex; gap: 8px; }
+.del { color: var(--danger); }
+.deleted {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-style: italic;
+  background: transparent; color: var(--ink-2); box-shadow: 0 0 0 1px var(--line);
+}
+.deleted time { flex-basis: 100%; }
+
 .meet {
   align-self: stretch; display: flex; flex-direction: column; gap: 10px;
   background: var(--surface); box-shadow: 0 0 0 1px var(--line); border-radius: 22px; padding: 14px;

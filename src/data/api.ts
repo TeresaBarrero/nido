@@ -16,6 +16,8 @@ export interface Message {
   kind: 'text' | 'meeting_proposal';
   payload: { place: string; at: string } | null;
   created_at: string;
+  /** Si se eliminó «para todos», la fecha; el texto queda vacío. */
+  deleted_at?: string | null;
 }
 
 export interface PersonLite { id: string; name: string; tone: Tone; verified: boolean }
@@ -62,6 +64,9 @@ export function useConversation(listingId: number, conversationId: string | null
         .channel(`messages:${cid}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${cid}` },
           (payload) => setMessages((prev) => prev.some((x) => x.id === (payload.new as Message).id) ? prev : [...prev, payload.new as Message]))
+        // Mensajes eliminados por la otra persona (o por ti en otro dispositivo).
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${cid}` },
+          (payload) => setMessages((prev) => prev.map((x) => x.id === (payload.new as Message).id ? { ...x, ...(payload.new as Message) } : x)))
         .subscribe();
     })();
 
@@ -76,7 +81,14 @@ export function useConversation(listingId: number, conversationId: string | null
     setMessages((prev) => prev.some((x) => x.id === data.id) ? prev : [...prev, data as Message]);
   }, [conv]);
 
-  return { conv, messages, error, send };
+  const remove = useCallback(async (messageId: string) => {
+    const { error: e } = await supabase.rpc('delete_message', { p_message: messageId });
+    if (e) throw e;
+    const now = new Date().toISOString();
+    setMessages((prev) => prev.map((x) => x.id === messageId ? { ...x, body: '', deleted_at: now } : x));
+  }, []);
+
+  return { conv, messages, error, send, remove };
 }
 
 export interface ConversationSummary extends Conversation {
@@ -88,7 +100,7 @@ export interface ConversationSummary extends Conversation {
 export async function fetchConversations(): Promise<ConversationSummary[]> {
   const { data, error } = await supabase.from('conversations').select(`${CONV_SELECT},
     listing:listings ( title, listing_photos ( path, position ) ),
-    messages ( id, conversation_id, sender_id, body, kind, payload, created_at )`);
+    messages ( id, conversation_id, sender_id, body, kind, payload, created_at, deleted_at )`);
   if (error) throw error;
   type R = Conversation & { listing: { title: string; listing_photos: { path: string; position: number }[] } | null; messages: Message[] };
   return (data as unknown as R[]).map((r) => {

@@ -54,7 +54,7 @@ export function Messages() {
               const other = iAmSeller ? c.buyer : c.seller;
               const tone = TONES[other.tone];
               const last = c.last
-                ? (c.last.kind === 'meeting_proposal' ? 'Propuesta de entrega' : c.last.body)
+                ? (c.last.kind === 'meeting_proposal' ? 'Propuesta de entrega' : c.last.deleted_at ? 'Mensaje eliminado' : c.last.body)
                 : 'Conversación nueva';
               return (
                 <li key={c.id} className={styles.item}>

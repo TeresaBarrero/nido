@@ -32,7 +32,9 @@ export function Chat() {
   const { data: p, loading, error } = useListing(listingId);
   const { userId } = useAuth();
   const { toast } = useApp();
-  const { conv, messages, error: convError, send } = useConversation(listingId, params.get('c'));
+  const { conv, messages, error: convError, send, remove } = useConversation(listingId, params.get('c'));
+  const [picked, setPicked] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const key = draftKey(userId, listingId);
   const [draft, setDraftState] = useState(() => readDraft(key));
   const setDraft = (t: string) => { setDraftState(t); writeDraft(key, t); };
@@ -61,6 +63,45 @@ export function Chat() {
     if (!t || !userId || sending) return;
     setSending(true);
     try { await send(userId, t); if (t === draft.trim()) setDraft(''); } catch (e) { toast(errorMessage(e, 'No se ha podido enviar el mensaje.')); } finally { setSending(false); }
+  };
+
+  const removeMessage = async (messageId: string) => {
+    setDeleting(true);
+    try { await remove(messageId); setPicked(null); toast('Mensaje eliminado'); } catch (e) { toast(errorMessage(e, 'No se ha podido eliminar el mensaje.')); } finally { setDeleting(false); }
+  };
+
+  const text = (m: Message) => {
+    const mine = m.sender_id === userId;
+    const cls = `${styles.msg} ${mine ? styles.me : styles.them}`;
+    const time = <time dateTime={m.created_at}>{hour(m.created_at)}</time>;
+    if (m.deleted_at) {
+      return (
+        <div key={m.id} className={`${cls} ${styles.deleted}`}>
+          <Icon name="ban" size={14} /> {mine ? 'Has eliminado este mensaje' : 'Mensaje eliminado'}{time}
+        </div>
+      );
+    }
+    if (!mine) return <div key={m.id} className={`${cls} fade`}>{m.body}{time}</div>;
+    const open = picked === m.id;
+    return (
+      <div key={m.id} className={`${styles.mine} fade`} onKeyDown={(e) => { if (e.key === 'Escape') setPicked(null); }}>
+        <button
+          type="button" className={`${cls} ${open ? styles.picked : ''}`}
+          aria-expanded={open} aria-controls={`opt-${m.id}`}
+          onClick={() => setPicked(open ? null : m.id)}
+        >
+          {m.body}{time}<span className="sr-only">. Toca para eliminarlo</span>
+        </button>
+        {open && (
+          <div id={`opt-${m.id}`} ref={(el) => el?.scrollIntoView({ block: 'nearest' })} className={`${styles.msgMenu} fade`} role="group" aria-label="Opciones del mensaje">
+            <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>Cancelar</Button>
+            <Button size="sm" variant="ghost" className={styles.del} disabled={deleting} onClick={() => removeMessage(m.id)}>
+              {deleting ? 'Eliminando…' : 'Eliminar para todos'}
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const meeting = (m: Message) => {
@@ -114,11 +155,7 @@ export function Chat() {
         {conv && messages.length === 0 && (
           <p className="muted" style={{ textAlign: 'center', fontSize: 14 }}>Saluda a {firstName(other.name)} y pregunta lo que necesites.</p>
         )}
-        {messages.map((m) => m.kind === 'meeting_proposal' ? meeting(m) : (
-          <div key={m.id} className={`${styles.msg} ${m.sender_id === userId ? styles.me : styles.them} fade`}>
-            {m.body}<time dateTime={m.created_at}>{hour(m.created_at)}</time>
-          </div>
-        ))}
+        {messages.map((m) => m.kind === 'meeting_proposal' ? meeting(m) : text(m))}
       </div>
 
       {conv && (
