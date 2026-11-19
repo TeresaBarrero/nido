@@ -34,6 +34,8 @@ interface AuthState {
   /** true si es una cuenta de invitada (modo demo). */
   isDemo: boolean;
   ready: boolean;
+  /** true mientras se crea la cuenta de invitada y sus datos de ejemplo. */
+  demoStarting: boolean;
   refresh: () => Promise<void>;
   startDemo: () => Promise<void>;
   sendMagicLink: (email: string) => Promise<void>;
@@ -77,16 +79,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => { if (userId) await load(userId); }, [userId, load]);
 
+  const [demoStarting, setDemoStarting] = useState(false);
   const startDemo = useCallback(async () => {
-    let id = userId;
-    if (!id) {
-      const { data, error } = await supabase.auth.signInAnonymously();
+    setDemoStarting(true);
+    try {
+      let id = userId;
+      if (!id) {
+        const { data, error } = await supabase.auth.signInAnonymously();
+        if (error) throw error;
+        id = data.user!.id;
+      }
+      const { error } = await supabase.rpc('setup_demo');
       if (error) throw error;
-      id = data.user!.id;
+      await load(id);
+    } finally {
+      setDemoStarting(false);
     }
-    const { error } = await supabase.rpc('setup_demo');
-    if (error) throw error;
-    await load(id);
   }, [userId, load]);
 
   const sendMagicLink = useCallback(async (email: string) => {
@@ -108,8 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     baby,
     isDemo: Boolean(session?.user.is_anonymous),
     ready: session !== undefined && (!userId || loadedFor === userId),
+    demoStarting,
     refresh, startDemo, sendMagicLink, signOut,
-  }), [session, userId, profile, baby, loadedFor, refresh, startDemo, sendMagicLink, signOut]);
+  }), [session, userId, profile, baby, loadedFor, demoStarting, refresh, startDemo, sendMagicLink, signOut]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

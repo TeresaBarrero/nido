@@ -5,14 +5,15 @@ import { useAuth } from './Auth';
 
 /** Marco de la app: ancho de móvil, avisos y control de acceso (sesión y bienvenida). */
 export function Root() {
-  const { session, profile, ready } = useAuth();
+  const { session, profile, ready, demoStarting } = useAuth();
   const { pathname } = useLocation();
   const onWelcome = pathname === '/bienvenida';
   // La privacidad se puede leer sin entrar en la app.
   const isPublic = pathname === '/privacidad';
 
   let content = <Outlet />;
-  if (!ready) {
+  // Mientras se prepara la demo, solo el logo: así no asoma la pantalla de ubicación de la bienvenida.
+  if (!ready || demoStarting) {
     content = (
       <div className="done-screen" style={{ justifyContent: 'center', background: 'var(--primary-soft)' }} aria-busy="true">
         <Logo size={72} />

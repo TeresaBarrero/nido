@@ -42,6 +42,7 @@ export function Onboarding() {
     try { await fn(); } catch (e) { toast(errorMessage(e)); } finally { setBusy(false); }
   };
 
+  // Mientras se prepara, Root muestra el logo de carga; con el perfil de ejemplo completo, la app pasa sola a Inicio.
   const demo = () => run(async () => {
     await startDemo();
     toast('Estás en la demo: datos de ejemplo y pagos simulados');
