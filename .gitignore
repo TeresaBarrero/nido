@@ -6,3 +6,6 @@ dist
 .DS_Store
 .vercel
 dev-dist
+
+# Archivos temporales de la CLI de Supabase
+supabase/.temp

@@ -11,7 +11,7 @@ export function Privacy() {
         <h1 style={{ fontSize: 20, fontWeight: 900 }}>Privacidad</h1>
       </header>
       <main className="legal fade">
-        <p className="muted">Última actualización: 18 de noviembre de 2026</p>
+        <p className="muted">Última actualización: 19 de noviembre de 2026</p>
 
         <h2>Qué es Nido</h2>
         <p>
@@ -22,7 +22,7 @@ export function Privacy() {
 
         <h2>Qué datos guardamos</h2>
         <ul>
-          <li><b>En la demo:</b> se crea una cuenta de invitada sin correo. Lo que hagas solo sirve para que pruebes la app.</li>
+          <li><b>En la demo:</b> se crea una cuenta de invitada sin correo. Lo que hagas solo sirve para que pruebes la app y solo lo ves tú.</li>
           <li><b>Si entras con tu correo:</b> tu correo, para enviarte el enlace de acceso.</li>
           <li><b>Tu perfil:</b> el nombre que elijas y tu barrio o una ubicación aproximada, redondeada a unos 100 metros. Nunca guardamos tu posición exacta.</li>
           <li><b>Tu bebé (opcional):</b> solo la fecha de nacimiento y, si quieres, un nombre. Nunca fotos.</li>
@@ -30,7 +30,10 @@ export function Privacy() {
           <li><b>Tu opinión:</b> si respondes la encuesta, tus puntuaciones y tu comentario.</li>
           <li><b>En tu navegador:</b> el progreso de las tareas de prueba y los borradores del chat. No salen de tu dispositivo.</li>
         </ul>
-        <p>Tu nombre, tu barrio y tus valoraciones se ven en tu perfil público, como en cualquier app de compraventa.</p>
+        <p>
+          Si entras con tu correo, tu nombre, tu barrio, tus anuncios y tus valoraciones se ven en tu perfil público, como en cualquier app de
+          compraventa. Si entras como invitada, nada de lo que hagas lo ve otra persona: ni tu perfil, ni tus anuncios y fotos, ni tus valoraciones.
+        </p>
 
         <h2>Para qué los usamos</h2>
         <p>
@@ -45,7 +48,12 @@ export function Privacy() {
         </p>
 
         <h2>Cuánto tiempo</h2>
-        <p>Mientras la demo siga publicada. Puedes pedir que borremos tus datos en cualquier momento.</p>
+        <ul>
+          <li><b>Cuentas de invitada:</b> se borran solas a las 48 horas, con todo lo que contengan (perfil, anuncios, fotos, mensajes, reservas y valoraciones).</li>
+          <li><b>Cuentas con correo:</b> mientras la demo siga publicada.</li>
+          <li><b>Respuestas de la encuesta:</b> se conservan para mejorar el diseño. Al borrarse tu cuenta dejan de estar vinculadas a ella.</li>
+        </ul>
+        <p>Puedes pedir que borremos tus datos en cualquier momento.</p>
 
         <h2>Tus derechos</h2>
         <p>

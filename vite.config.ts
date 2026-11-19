@@ -30,6 +30,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,jpg,woff2}'],
+        // La imagen de vista previa solo la usan LinkedIn y otras redes al compartir el enlace.
+        globIgnores: ['**/og-image.jpg'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         clientsClaim: true,
