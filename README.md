@@ -34,6 +34,7 @@ Compraventa de productos de bebé entre familias del mismo barrio. Proyecto de p
 - **Entrar con mi correo**: enlace mágico, sin contraseña.
 - Las familias de ejemplo **responden solas en el chat** y proponen un punto de entrega.
 - Los anuncios de ejemplo **no se agotan**: cada tester ve su propia reserva y entrega.
+- **Cuentas de invitada aisladas**: lo que publica una invitada (anuncios, fotos, reseñas, nombre) solo lo ve ella, y solo puede chatear y reservar con las familias de ejemplo. Las cuentas de invitada se borran solas a las 48 horas (Edge Function `cleanup-demo`, llamada cada día por `pg_cron`).
 - **Modo prueba**: en Inicio hay 3 tareas y, al final, un cuestionario (`/opinion`). Las respuestas se ven en `/resultados`, solo para administradoras.
 
 ### Dar acceso a /resultados
