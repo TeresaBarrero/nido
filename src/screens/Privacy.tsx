@@ -43,8 +43,10 @@ export function Privacy() {
 
         <h2>Dónde se guardan</h2>
         <p>
-          La app está alojada en Vercel y los datos se guardan en Supabase. Son los proveedores técnicos que hacen funcionar Nido y solo tratan
-          los datos para prestar ese servicio.
+          La app está alojada en Vercel y los datos se guardan en Supabase, en servidores de la Unión Europea (Frankfurt). Son los proveedores
+          técnicos que hacen funcionar Nido y solo tratan los datos para prestar ese servicio. Vercel es una empresa de Estados Unidos y sirve
+          la web desde allí, así que datos técnicos de tu visita (como la dirección IP) pueden tratarse fuera de la Unión Europea. Está
+          adherida al Marco de Privacidad de Datos UE-EE. UU., que garantiza un nivel de protección equivalente al europeo.
         </p>
 
         <h2>Cuánto tiempo</h2>
