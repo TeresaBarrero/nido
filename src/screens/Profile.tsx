@@ -201,7 +201,7 @@ export function Profile() {
             onClick={async () => {
               const url = window.location.origin;
               try {
-                if (navigator.share) await navigator.share({ title: 'Nido', text: 'Compra y vende cosas de bebé en tu barrio', url });
+                if (navigator.share) await navigator.share({ title: 'Nido', text: 'Compra y vende cosas de bebé con familias cerca de ti', url });
                 else { await navigator.clipboard.writeText(url); toast('Invitación copiada'); }
               } catch { /* cancelado */ }
             }}

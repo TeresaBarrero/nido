@@ -1,7 +1,7 @@
 # Nido · contexto para Claude Code
 
 ## Qué es
-Nido es una app de compraventa de productos de bebé entre familias del mismo barrio: ropa, muebles, paseo y productos de higiene nuevos. Es un proyecto de portfolio de diseño UX/UI de Teresa Barrero que ahora se convierte en una app real y navegable para que otras personas la prueben.
+Nido es una app de compraventa de productos de bebé entre familias que viven cerca: ropa, muebles, paseo y productos de higiene nuevos. Es un proyecto de portfolio de diseño UX/UI de Teresa Barrero que ahora se convierte en una app real y navegable para que otras personas la prueben.
 
 - **Objetivo:** una PWA (app web instalable en el móvil) publicada con un enlace, con datos reales y el pago simulado.
 - **Referencia visual y de recorridos:** `docs/prototipo/index.html`. Ábrelo antes de diseñar cualquier pantalla: el aspecto, los textos y los flujos de la app deben coincidir con él.

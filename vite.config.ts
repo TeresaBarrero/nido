@@ -13,7 +13,7 @@ export default defineConfig({
       manifest: {
         name: 'Nido',
         short_name: 'Nido',
-        description: 'Cosas de bebé de familias de tu barrio',
+        description: 'Cosas de bebé de familias cerca de ti',
         lang: 'es-ES',
         start_url: '/',
         scope: '/',

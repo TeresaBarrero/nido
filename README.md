@@ -1,6 +1,6 @@
 # Nido
 
-Compraventa de productos de bebé entre familias del mismo barrio. Proyecto de portfolio UX/UI de Teresa Barrero, convertido en app real (PWA) con Claude Code.
+Compraventa de productos de bebé entre familias que viven cerca. Proyecto de portfolio UX/UI de Teresa Barrero, convertido en app real (PWA) con Claude Code.
 
 - Prototipo de referencia: `docs/prototipo/index.html`
 - Especificación: `docs/spec.md`

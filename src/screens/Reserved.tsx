@@ -96,7 +96,7 @@ function ReservedContent() {
         </div>
         <div className="nudge" style={{ textAlign: 'left', width: '100%', marginTop: 14 }}>
           <strong>¿Y cuando {baby?.name || 'tu bebé'} ya no lo use?</strong>
-          <p>Te recordaremos venderlo cuando deje de valerle. Así otra familia del barrio también ahorra.</p>
+          <p>Te recordaremos venderlo cuando deje de valerle. Así otra familia cerca de ti también ahorra.</p>
         </div>
         <ButtonLink to="/" variant="ghost" block style={{ marginTop: 6 }}>Volver al inicio</ButtonLink>
       </main>

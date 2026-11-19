@@ -85,7 +85,7 @@ export function Onboarding() {
       <div className={`${styles.splash} fade`}>
         <Logo size={96} className={styles.logo} />
         <h1 className={styles.wordmark}>nido</h1>
-        <p>De familia a familia, en tu barrio</p>
+        <p>De familia a familia, cerca de ti</p>
       </div>
     );
   }
@@ -94,8 +94,8 @@ export function Onboarding() {
     return (
       <main className={`${styles.onb} fade`}>
         <div className={styles.hero} style={{ background: 'var(--primary-soft)' }}><Logo size={110} /></div>
-        <h1 className={styles.title}>Cosas de bebé de familias de tu barrio</h1>
-        <p className="muted">Compra y vende en mano, cerca de casa, con el pago protegido por Nido.</p>
+        <h1 className={styles.title}>Cosas de bebé de familias cerca de ti</h1>
+        <p className="muted">Compra y vende en mano y sin envíos, con el pago protegido por Nido.</p>
         <div className="stack">
           <Button block disabled={busy} onClick={demo}><Icon name="sparkle" size={18} /> {busy ? 'Preparando la demo…' : 'Probar la demo'}</Button>
           <Button block variant="ghost" disabled={busy} onClick={() => setStep('email')}>Entrar con mi correo</Button>
@@ -148,7 +148,7 @@ export function Onboarding() {
         <div className={styles.hero} style={{ background: 'var(--mint)', color: '#2F7A5E' }}>
           <Icon name="pin" size={90} strokeWidth={1.6} />
         </div>
-        <h1 className={styles.title}>Cosas de bebé de familias de tu barrio</h1>
+        <h1 className={styles.title}>Cosas de bebé de familias cerca de ti</h1>
         <p className="muted">Te enseñamos primero lo que está cerca, para que puedas recogerlo a pie y sin gastos de envío.</p>
         {askHood ? (
           <form className={styles.form} onSubmit={(e) => { e.preventDefault(); saveLocation(MADRID, hood.trim() || null); }}>
