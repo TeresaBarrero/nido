@@ -127,7 +127,7 @@ export function Product() {
         ) : (
           <>
             <ButtonLink to={`/chat/${p.id}`} variant="ghost"><Icon name="chat" size={19} /> Chatear</ButtonLink>
-            <ButtonLink to={`/chat/${p.id}`}>Reservar · {euros(p.price)}</ButtonLink>
+            <ButtonLink to={`/pagar/${p.id}`}>Reservar · {euros(p.price)}</ButtonLink>
           </>
         )}
       </div>
