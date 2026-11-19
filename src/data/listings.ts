@@ -91,6 +91,7 @@ export function toProduct(r: Row): Product {
     },
     description: r.description,
     meetingPoint: r.meeting_point ?? 'Punto de encuentro por acordar',
+    point: r.lat != null && r.lng != null ? { lat: r.lat, lng: r.lng } : null,
     isNew: r.condition === 'Nuevo precintado',
     lotCount: r.lot_count ?? undefined,
     complete: r.is_complete,

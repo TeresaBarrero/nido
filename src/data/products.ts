@@ -37,6 +37,8 @@ export interface Product {
   seller: Seller;
   description: string;
   meetingPoint: string;
+  /** Zona aproximada del anuncio (ya desplazada al publicarlo), para el mapa pequeño. */
+  point?: { lat: number; lng: number } | null;
   isNew: boolean;
   lotCount?: number;
   complete: boolean;

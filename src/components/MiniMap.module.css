@@ -1,0 +1,22 @@
+.map {
+  margin-top: 14px; height: 150px; border-radius: 20px;
+  position: relative; overflow: hidden; background: #EEF0F2;
+  box-shadow: 0 0 0 1px var(--line);
+}
+/* El punto del anuncio queda en el centro del recuadro. */
+.origin { position: absolute; left: 50%; top: 50%; filter: grayscale(.85) brightness(1.05) contrast(.9); opacity: .9; }
+.origin img { position: absolute; width: 256px; height: 256px; max-width: none; user-select: none; }
+.zone {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: rgba(78, 110, 158, .16); border: 2px solid var(--primary);
+}
+.label {
+  position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px);
+  background: var(--surface); border-radius: 12px; padding: 5px 10px;
+  font-size: 12.5px; font-weight: 700; box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+}
+.credit {
+  position: absolute; right: 0; top: 0;
+  background: rgba(255, 255, 255, .85); border-bottom-left-radius: 8px;
+  padding: 2px 6px; font-size: 10px; color: var(--ink-2);
+}

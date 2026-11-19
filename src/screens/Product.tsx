@@ -7,6 +7,7 @@ import { BackButton } from '../components/BackButton';
 import { ButtonLink } from '../components/Button';
 import { FavButton } from '../components/FavButton';
 import { Icon } from '../components/Icon';
+import { MiniMap } from '../components/MiniMap';
 import { TONES, stageLabel } from '../data/catalog';
 import { euros, initials, km, rating } from '../data/format';
 import { productImage } from '../data/products';
@@ -96,13 +97,17 @@ export function Product() {
             <span className="cmeta" title="Suele responder en 1 hora"><Icon name="clock" size={13} /> 1 h</span>
           </div>
 
-          <div className={styles.map}>
-            <svg width="100%" height="100%" viewBox="0 0 340 120" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M0 40h340M0 88h340M70 0v120M180 0v120M270 0v120M0 0l140 120" stroke="#fff" strokeWidth="7" fill="none" />
-            </svg>
-            <span className={styles.pin} aria-hidden="true" />
-            <span className={styles.mapLabel}>Entrega sugerida: {p.meetingPoint}</span>
-          </div>
+          {p.point ? (
+            <MiniMap lat={p.point.lat} lng={p.point.lng} label={`Entrega sugerida: ${p.meetingPoint}`} />
+          ) : (
+            <div className={styles.map}>
+              <svg width="100%" height="100%" viewBox="0 0 340 120" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0 40h340M0 88h340M70 0v120M180 0v120M270 0v120M0 0l140 120" stroke="#fff" strokeWidth="7" fill="none" />
+              </svg>
+              <span className={styles.pin} aria-hidden="true" />
+              <span className={styles.mapLabel}>Entrega sugerida: {p.meetingPoint}</span>
+            </div>
+          )}
 
           <div className="trust">
             <Icon name="lock" size={24} />

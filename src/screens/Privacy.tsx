@@ -47,6 +47,8 @@ export function Privacy() {
           técnicos que hacen funcionar Nido y solo tratan los datos para prestar ese servicio. Vercel es una empresa de Estados Unidos y sirve
           la web desde allí, así que datos técnicos de tu visita (como la dirección IP) pueden tratarse fuera de la Unión Europea. Está
           adherida al Marco de Privacidad de Datos UE-EE. UU., que garantiza un nivel de protección equivalente al europeo.
+          Los mapas pequeños de los anuncios se cargan desde OpenStreetMap, que recibe la dirección IP de tu visita para enviarte las
+          imágenes del mapa. No se le envía ningún otro dato.
         </p>
 
         <h2>Cuánto tiempo</h2>
